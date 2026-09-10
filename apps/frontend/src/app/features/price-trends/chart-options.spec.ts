@@ -44,6 +44,17 @@ describe('buildPriceTrendChartOption', () => {
     expect(rcn).toMatchObject({ name: 'RCN, mediana', data: [9501] });
   });
 
+  it('plots GUS as a third independent series', () => {
+    const rows = [
+      record({ quarter: '2018Q1', dataSource: 'nbp', pricePerM2: 7900 }),
+      record({ quarter: '2018Q1', dataSource: 'gus', statType: 'median', pricePerM2: 7830 }),
+    ];
+
+    const [, , gus] = series(buildPriceTrendChartOption(rows));
+
+    expect(gus).toMatchObject({ name: 'GUS, mediana roczna', data: [7830] });
+  });
+
   it('leaves a null gap for a quarter/series combination with no data, instead of interpolating', () => {
     const rows = [
       record({ quarter: '2020Q1', dataSource: 'nbp', pricePerM2: 9000 }),

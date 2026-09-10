@@ -25,6 +25,12 @@ describe('describeSource', () => {
   it('labels an NBP row as a mean', () => {
     expect(describeSource(record({ dataSource: 'nbp', statType: 'mean' }))).toBe('NBP, średnia');
   });
+
+  it('labels a GUS row as an annual median', () => {
+    expect(describeSource(record({ dataSource: 'gus', statType: 'median' }))).toBe(
+      'GUS, mediana roczna',
+    );
+  });
 });
 
 describe('formatPricePerM2', () => {

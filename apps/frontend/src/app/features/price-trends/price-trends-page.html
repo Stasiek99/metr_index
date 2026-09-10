@@ -2,14 +2,14 @@
   <h1>Trendy cen — Warszawa</h1>
 
   <p class="price-trends__caption">
-    @if (usesRcn() && usesNbp()) {
-      Dwie osobne serie: średnia NBP i mediana z rejestru RCN (realne transakcje notarialne) —
-      mediana bywa niższa od średniej, a RCN pojawia się tylko tam, gdzie ma wystarczająco dużo
-      transakcji, więc linie nie zawsze pokrywają te same kwartały.
-    } @else if (usesRcn()) {
-      Mediana z rejestru RCN — realne transakcje notarialne.
+    @if (filters.priceType() === 'offer') {
+      Średnia NBP — jedyna dostępna statystyka dla cen ofertowych (RCN i GUS mają wyłącznie ceny
+      transakcyjne).
     } @else {
-      Średnia NBP — jedyna dostępna statystyka dla tego źródła (NBP nie publikuje mediany).
+      Trzy niezależne serie dla cen transakcyjnych: średnia NBP (pełna historia), mediana RCN
+      (realne transakcje notarialne — bez pokrycia 2017–2020, bo obecny rejestr powstał dopiero w
+      2021 r.) i mediana roczna GUS (2010–2024, wypełnia lukę RCN; ta sama wartość powtórzona na
+      każdy kwartał danego roku). Linie nie muszą pokrywać tego samego zakresu.
     }
   </p>
 

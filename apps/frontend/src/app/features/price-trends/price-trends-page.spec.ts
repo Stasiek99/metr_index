@@ -100,7 +100,7 @@ describe('PriceTrendsPage', () => {
     req.flush([]);
   });
 
-  it('keeps NBP and RCN rows for the same quarter separate (no merging) and shows both in the table', () => {
+  it('keeps NBP, RCN, and GUS rows for the same quarter separate (no merging) and shows all in the table', () => {
     const fixture = TestBed.createComponent(PriceTrendsPage);
     fixture.detectChanges();
 
@@ -109,11 +109,24 @@ describe('PriceTrendsPage', () => {
       .flush([
         record({ quarter: '2020Q1', dataSource: 'nbp', pricePerM2: 9000 }),
         record({ quarter: '2020Q1', dataSource: 'rcn', statType: 'median', pricePerM2: 9500 }),
+        record({ quarter: '2020Q1', dataSource: 'gus', statType: 'median', pricePerM2: 8800 }),
       ]);
     fixture.detectChanges();
 
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(text).toContain('Dwie osobne serie');
-    expect((fixture.nativeElement as HTMLElement).querySelectorAll('tbody tr')).toHaveLength(2);
+    expect(text).toContain('Trzy niezależne serie');
+    expect((fixture.nativeElement as HTMLElement).querySelectorAll('tbody tr')).toHaveLength(3);
+  });
+
+  it('shows the offer-only caption when priceType is offer', () => {
+    const fixture = TestBed.createComponent(PriceTrendsPage);
+    filters.priceType.set('offer');
+    fixture.detectChanges();
+
+    httpMock.expectOne((r) => r.url === '/api/prices').flush([record({ priceType: 'offer' })]);
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('jedyna dostępna statystyka dla cen ofertowych');
   });
 });

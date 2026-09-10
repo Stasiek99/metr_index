@@ -28,8 +28,6 @@ export class PriceTrendsPage {
   protected readonly error = signal<string | null>(null);
 
   protected readonly hasData = computed(() => this.rows().length > 0);
-  protected readonly usesRcn = computed(() => this.rows().some((row) => row.dataSource === 'rcn'));
-  protected readonly usesNbp = computed(() => this.rows().some((row) => row.dataSource === 'nbp'));
   protected readonly chartOption = computed(() => buildPriceTrendChartOption(this.rows()));
   protected readonly tableRows = computed(() => buildPriceTableRows(this.rows()));
 

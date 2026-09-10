@@ -1,7 +1,7 @@
 export type Market = 'primary' | 'secondary';
 export type PriceType = 'transaction' | 'offer';
 export type StatType = 'mean' | 'median';
-export type DataSource = 'nbp' | 'rcn';
+export type DataSource = 'nbp' | 'rcn' | 'gus';
 
 export interface PriceRecord {
   city: string;
