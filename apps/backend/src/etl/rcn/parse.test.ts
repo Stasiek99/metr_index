@@ -20,6 +20,8 @@ const COMPLETE_FEATURE = `
       <ms:lok_pow_uzyt>30.29</ms:lok_pow_uzyt>
       <ms:lok_cena_brutto>192700</ms:lok_cena_brutto>
       <ms:lok_adres>MSC:Warszawa;UL:ulica Ciasna;NR_PORZ:15</ms:lok_adres>
+      <ms:lok_liczba_izb>2</ms:lok_liczba_izb>
+      <ms:lok_nr_kond>3</ms:lok_nr_kond>
     </ms:lokale>
   </wfs:member>`;
 
@@ -53,6 +55,8 @@ describe('parseRcnFeaturePage', () => {
         areaM2: 30.29,
         priceGross: 192700,
         address: 'MSC:Warszawa;UL:ulica Ciasna;NR_PORZ:15',
+        rooms: 2,
+        floor: 3,
       },
     ]);
   });
@@ -91,5 +95,23 @@ describe('parseRcnFeaturePage', () => {
     const { features } = parseRcnFeaturePage(wrapMembers(COMPLETE_FEATURE + INCOMPLETE_FEATURE));
 
     expect(features[0]?.address).toBe('MSC:Warszawa;UL:ulica Ciasna;NR_PORZ:15');
+  });
+
+  it('treats a missing lok_liczba_izb/lok_nr_kond as null rather than throwing', () => {
+    const featureWithoutRoomsOrFloor = `
+      <wfs:member>
+        <ms:lokale gml:id="lokale.1">
+          <ms:teryt>1465</ms:teryt>
+          <ms:tran_rodzaj_rynku>wtorny</ms:tran_rodzaj_rynku>
+          <ms:dok_data>2026-02-16 01:00:00+01</ms:dok_data>
+          <ms:lok_pow_uzyt>30.29</ms:lok_pow_uzyt>
+          <ms:lok_cena_brutto>192700</ms:lok_cena_brutto>
+        </ms:lokale>
+      </wfs:member>`;
+
+    const { features } = parseRcnFeaturePage(wrapMembers(featureWithoutRoomsOrFloor));
+
+    expect(features[0]?.rooms).toBeNull();
+    expect(features[0]?.floor).toBeNull();
   });
 });

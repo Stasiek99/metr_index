@@ -28,6 +28,31 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_prices_unique_key
 
 CREATE INDEX IF NOT EXISTS idx_prices_city_quarter ON prices (city, quarter);
 CREATE INDEX IF NOT EXISTS idx_prices_market ON prices (market);
+
+-- Raw RCN transactions — one row per gml:id from the WFS response, source of the median
+-- aggregated into 'prices' (data_source = 'rcn', stat_type = 'median'). price_per_m2 is a
+-- deviation from the schema sketch in ROADMAP.md sekcja 4 (which only lists price_gross
+-- and area_m2): storing the computed value avoids re-deriving it for every aggregation
+-- query and for any future per-transaction UI (e.g. a scatter plot), at the cost of one
+-- denormalized column.
+CREATE TABLE IF NOT EXISTS rcn_transactions (
+  id TEXT PRIMARY KEY,
+  city TEXT NOT NULL,
+  district TEXT,
+  street TEXT,
+  transaction_date TEXT NOT NULL,
+  quarter TEXT NOT NULL,
+  market TEXT NOT NULL CHECK (market IN ('primary', 'secondary')),
+  price_gross REAL NOT NULL,
+  area_m2 REAL NOT NULL,
+  price_per_m2 REAL NOT NULL,
+  rooms INTEGER,
+  floor INTEGER,
+  raw_address TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_rcn_transactions_city_quarter ON rcn_transactions (city, quarter);
+CREATE INDEX IF NOT EXISTS idx_rcn_transactions_market ON rcn_transactions (market);
 `;
 
 export function migrate(db: Database.Database): void {

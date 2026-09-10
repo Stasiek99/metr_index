@@ -12,7 +12,8 @@
     "test": "vitest run",
     "db:migrate": "tsx src/db/migrate.ts",
     "etl:nbp:download": "tsx src/etl/nbp/download.ts",
-    "etl:nbp:seed": "tsx src/etl/nbp/seed.ts"
+    "etl:nbp:seed": "tsx src/etl/nbp/seed.ts",
+    "etl:rcn:seed": "tsx src/etl/rcn/seed.ts"
   },
   "dependencies": {
     "better-sqlite3": "^13.0.3",

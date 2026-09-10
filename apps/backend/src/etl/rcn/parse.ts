@@ -10,6 +10,8 @@ export interface RcnRawFeature {
   areaM2: number | null;
   priceGross: number;
   address: string | null;
+  rooms: number | null;
+  floor: number | null;
 }
 
 export interface ParsedRcnPage {
@@ -68,6 +70,8 @@ export function parseRcnFeaturePage(xml: string): ParsedRcnPage {
       areaM2: toNullableNumber(lokale['ms:lok_pow_uzyt']),
       priceGross,
       address: toNullableString(lokale['ms:lok_adres']),
+      rooms: toNullableNumber(lokale['ms:lok_liczba_izb']),
+      floor: toNullableNumber(lokale['ms:lok_nr_kond']),
     });
   }
 
