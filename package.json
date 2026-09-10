@@ -1,0 +1,20 @@
+{
+  "name": "metr-index",
+  "private": true,
+  "version": "0.0.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "lint": "eslint . && npm run lint --workspace=frontend",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.9.1",
+    "prettier": "^3.8.1",
+    "typescript-eslint": "8.69.0"
+  }
+}
