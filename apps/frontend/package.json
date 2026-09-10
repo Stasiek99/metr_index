@@ -22,6 +22,8 @@
     "@metr-index/shared": "^0.0.0",
     "@primeicons/angular": "^8.0.1",
     "@primeuix/themes": "^3.0.0",
+    "echarts": "^6.1.0",
+    "ngx-echarts": "^22.0.0",
     "primeng": "^22.1.1",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"

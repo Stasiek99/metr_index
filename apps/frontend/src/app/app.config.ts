@@ -6,6 +6,10 @@ import { providePrimeNG } from 'primeng/config';
 import { DARK_MODE_CLASS } from './core/theme/theme';
 import { routes } from './app.routes';
 
+// ngx-echarts is provided per-feature-component (see price-trends-page.ts), not here —
+// registering it at the root would pull echarts into the eager main bundle instead of the
+// lazy route chunk that actually needs it.
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),

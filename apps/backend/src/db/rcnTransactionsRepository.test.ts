@@ -74,13 +74,22 @@ describe('upsertRcnTransactions', () => {
   });
 });
 
+// aggregateRcnMedianPrices requires at least MIN_TRANSACTIONS_FOR_MEDIAN (5) raw rows per
+// group before it emits a median — see the comment on that constant. Group-shape tests
+// below pad each group to exactly 5 so they exercise real median math without tripping
+// the threshold; the threshold itself gets its own dedicated tests.
+function groupOf(
+  overrides: Partial<NormalizedRcnTransaction>,
+  pricesPerM2: number[],
+): NormalizedRcnTransaction[] {
+  return pricesPerM2.map((pricePerM2, i) =>
+    transaction({ ...overrides, id: `${overrides.id ?? 'g'}-${i}`, pricePerM2 }),
+  );
+}
+
 describe('aggregateRcnMedianPrices', () => {
   it('computes an odd-count median for a single group', () => {
-    upsertRcnTransactions(db, [
-      transaction({ id: '1', pricePerM2: 5000 }),
-      transaction({ id: '2', pricePerM2: 7000 }),
-      transaction({ id: '3', pricePerM2: 6000 }),
-    ]);
+    upsertRcnTransactions(db, groupOf({}, [5000, 7000, 6000, 8000, 4000]));
 
     const [record] = aggregateRcnMedianPrices(db, 'source');
 
@@ -99,12 +108,7 @@ describe('aggregateRcnMedianPrices', () => {
   });
 
   it('computes an even-count median as the average of the two middle values', () => {
-    upsertRcnTransactions(db, [
-      transaction({ id: '1', pricePerM2: 5000 }),
-      transaction({ id: '2', pricePerM2: 7000 }),
-      transaction({ id: '3', pricePerM2: 6000 }),
-      transaction({ id: '4', pricePerM2: 9000 }),
-    ]);
+    upsertRcnTransactions(db, groupOf({}, [4000, 5000, 6000, 7000, 8000, 9000]));
 
     const [record] = aggregateRcnMedianPrices(db, 'source');
 
@@ -112,30 +116,28 @@ describe('aggregateRcnMedianPrices', () => {
   });
 
   it('is not skewed by an outlier the way a mean would be', () => {
-    upsertRcnTransactions(db, [
-      transaction({ id: '1', pricePerM2: 5000 }),
-      transaction({ id: '2', pricePerM2: 5200 }),
-      transaction({ id: '3', pricePerM2: 5100 }),
-      transaction({ id: '4', pricePerM2: 50000 }), // luxury outlier
-    ]);
+    upsertRcnTransactions(db, groupOf({}, [5000, 5200, 5100, 5050, 50000]));
 
     const [record] = aggregateRcnMedianPrices(db, 'source');
 
-    expect(record?.pricePerM2).toBe(5150);
+    expect(record?.pricePerM2).toBe(5100);
   });
 
   it('groups separately by city, district, quarter, and market', () => {
     upsertRcnTransactions(db, [
-      transaction({ id: '1', quarter: '2026Q1', market: 'secondary', pricePerM2: 5000 }),
-      transaction({ id: '2', quarter: '2026Q2', market: 'secondary', pricePerM2: 6000 }),
-      transaction({ id: '3', quarter: '2026Q1', market: 'primary', pricePerM2: 7000 }),
-      transaction({
-        id: '4',
-        quarter: '2026Q1',
-        market: 'secondary',
-        district: 'Mokotow',
-        pricePerM2: 8000,
-      }),
+      ...groupOf(
+        { id: 'a', quarter: '2026Q1', market: 'secondary' },
+        [4000, 5000, 5000, 5000, 6000],
+      ),
+      ...groupOf(
+        { id: 'b', quarter: '2026Q2', market: 'secondary' },
+        [5000, 6000, 6000, 6000, 7000],
+      ),
+      ...groupOf({ id: 'c', quarter: '2026Q1', market: 'primary' }, [6000, 7000, 7000, 7000, 8000]),
+      ...groupOf(
+        { id: 'd', quarter: '2026Q1', market: 'secondary', district: 'Mokotow' },
+        [7000, 8000, 8000, 8000, 9000],
+      ),
     ]);
 
     const records = aggregateRcnMedianPrices(db, 'source');
@@ -148,5 +150,17 @@ describe('aggregateRcnMedianPrices', () => {
 
   it('returns an empty array when there are no transactions', () => {
     expect(aggregateRcnMedianPrices(db, 'source')).toEqual([]);
+  });
+
+  it('excludes a group with fewer than 5 raw transactions (real example: a 1-row 2017Q1 median of 82 zł/m² overriding a sane NBP figure)', () => {
+    upsertRcnTransactions(db, groupOf({}, [82, 90, 85, 88]));
+
+    expect(aggregateRcnMedianPrices(db, 'source')).toEqual([]);
+  });
+
+  it('includes a group with exactly 5 raw transactions (the minimum boundary)', () => {
+    upsertRcnTransactions(db, groupOf({}, [5000, 5100, 5200, 5300, 5400]));
+
+    expect(aggregateRcnMedianPrices(db, 'source')).toHaveLength(1);
   });
 });

@@ -72,6 +72,20 @@ function groupKey(row: Pick<MedianGroupRow, 'city' | 'district' | 'quarter' | 'm
   return [row.city, row.district ?? '', row.quarter, row.market].join('|');
 }
 
+// The frontend prefers an RCN median over the NBP mean for the same quarter whenever one
+// exists (ROADMAP.md sekcja 4a — RCN is the more realistic, real-transaction figure). That
+// assumption breaks down when the "median" is backed by only a handful of raw
+// transactions: found for real (2026-09-10, full Warszawa pull) — 2017Q1/primary had
+// exactly one RCN transaction, an obvious data defect (82 zł/m²) that unconditionally
+// overrode a perfectly reasonable NBP average for that quarter. Sample sizes across the
+// full dataset are overwhelmingly in the hundreds-to-thousands per (quarter, market); only
+// 15 out of 150 groups had fewer than 5 raw rows — so a floor of 5 excludes just the
+// genuinely degenerate groups without discarding real coverage. Below that floor, no RCN
+// row is emitted at all for the group, so the frontend's merge naturally falls back to NBP
+// (there's nothing to prefer over it) instead of the frontend having to reason about
+// per-row sample sizes itself.
+const MIN_TRANSACTIONS_FOR_MEDIAN = 5;
+
 /**
  * Aggregates rcn_transactions into one median price_per_m2 per (city, district, quarter,
  * market) group. SQLite has no built-in MEDIAN aggregate, so rows are grouped and sorted
@@ -106,16 +120,18 @@ export function aggregateRcnMedianPrices(db: Database.Database, sourceFile: stri
     group.values.push(row.price_per_m2);
   }
 
-  return [...groups.values()].map((group) => ({
-    city: group.city,
-    district: group.district,
-    quarter: group.quarter,
-    market: group.market,
-    priceType: 'transaction',
-    segment: null,
-    statType: 'median',
-    pricePerM2: median([...group.values].sort((a, b) => a - b)),
-    dataSource: 'rcn',
-    sourceFile,
-  }));
+  return [...groups.values()]
+    .filter((group) => group.values.length >= MIN_TRANSACTIONS_FOR_MEDIAN)
+    .map((group) => ({
+      city: group.city,
+      district: group.district,
+      quarter: group.quarter,
+      market: group.market,
+      priceType: 'transaction',
+      segment: null,
+      statType: 'median',
+      pricePerM2: median([...group.values].sort((a, b) => a - b)),
+      dataSource: 'rcn',
+      sourceFile,
+    }));
 }

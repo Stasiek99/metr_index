@@ -1,0 +1,56 @@
+<section class="price-trends">
+  <h1>Trendy cen — Warszawa</h1>
+
+  <p class="price-trends__caption">
+    @if (filters.priceType() === 'offer') {
+      Średnia NBP — jedyna dostępna statystyka dla cen ofertowych (RCN i GUS mają wyłącznie ceny
+      transakcyjne).
+    } @else {
+      Trzy niezależne serie dla cen transakcyjnych: średnia NBP (pełna historia), mediana RCN
+      (realne transakcje notarialne — bez pokrycia 2017–2020, bo obecny rejestr powstał dopiero w
+      2021 r.) i mediana roczna GUS (2010–2024, wypełnia lukę RCN; ta sama wartość powtórzona na
+      każdy kwartał danego roku). Linie nie muszą pokrywać tego samego zakresu.
+    }
+  </p>
+
+  @if (loading()) {
+    <p class="price-trends__status">Ładowanie danych...</p>
+  } @else if (error()) {
+    <p class="price-trends__status price-trends__status--error">{{ error() }}</p>
+  } @else if (!hasData()) {
+    <p class="price-trends__status">Brak danych dla wybranych filtrów.</p>
+  } @else {
+    <div echarts [options]="chartOption()" class="price-trends__chart"></div>
+
+    <div class="price-trends__table-toolbar">
+      <button pButton type="button" size="small" (click)="dt.exportCSV()">
+        <svg data-p-icon="download"></svg>
+        Eksportuj CSV
+      </button>
+    </div>
+
+    <p-table
+      #dt
+      [value]="tableRows()"
+      [paginator]="tableRows().length > 10"
+      [rows]="10"
+      dataKey="quarter"
+      exportFilename="ceny-warszawa"
+    >
+      <ng-template #header>
+        <tr>
+          <th>Kwartał</th>
+          <th>Cena/m²</th>
+          <th>Źródło</th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-row>
+        <tr>
+          <td>{{ row.quarter }}</td>
+          <td>{{ row.pricePerM2 }}</td>
+          <td>{{ row.source }}</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  }
+</section>

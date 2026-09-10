@@ -32,6 +32,7 @@ export async function seedRcnPrices(options: SeedOptions = {}): Promise<{
   skippedMissingArea: number;
   skippedInvalidDate: number;
   skippedUnknownMarket: number;
+  skippedImplausiblePrice: number;
 }> {
   const db = openDatabase();
   try {
@@ -41,6 +42,7 @@ export async function seedRcnPrices(options: SeedOptions = {}): Promise<{
     let skippedMissingArea = 0;
     let skippedInvalidDate = 0;
     let skippedUnknownMarket = 0;
+    let skippedImplausiblePrice = 0;
     let pageCount = 0;
 
     for await (const xml of fetchAllRcnFeaturePages({ teryt: WARSAW_TERYT })) {
@@ -53,6 +55,7 @@ export async function seedRcnPrices(options: SeedOptions = {}): Promise<{
       skippedMissingArea += skipped.missingArea;
       skippedInvalidDate += skipped.invalidDate;
       skippedUnknownMarket += skipped.unknownMarket;
+      skippedImplausiblePrice += skipped.implausiblePrice;
 
       upsertRcnTransactions(db, transactions);
 
@@ -77,6 +80,7 @@ export async function seedRcnPrices(options: SeedOptions = {}): Promise<{
       skippedMissingArea,
       skippedInvalidDate,
       skippedUnknownMarket,
+      skippedImplausiblePrice,
     };
   } finally {
     db.close();
@@ -93,7 +97,8 @@ async function main() {
     `Done. rcn_transactions: ${result.transactionCount} rows. ` +
       `Skipped: ${result.skippedIncomplete} incomplete (no price), ` +
       `${result.skippedMissingArea} missing area, ${result.skippedInvalidDate} invalid date, ` +
-      `${result.skippedUnknownMarket} unknown market. ` +
+      `${result.skippedUnknownMarket} unknown market, ` +
+      `${result.skippedImplausiblePrice} implausible price/m². ` +
       `Aggregated ${result.medianPriceRowCount} median price rows into prices.`,
   );
 }

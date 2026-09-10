@@ -126,4 +126,69 @@ describe('fetchAllRcnFeaturePages', () => {
 
     await expect(drain()).rejects.toThrow(/HTTP 403/);
   });
+
+  it('retries a transient network failure (fetch itself throwing) and succeeds', async () => {
+    vi.useFakeTimers();
+    try {
+      const fetchMock = vi
+        .fn()
+        .mockRejectedValueOnce(new TypeError('fetch failed'))
+        .mockImplementationOnce(async () => ({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          text: async () => featureCollectionXml({ numberReturned: 1 }),
+        }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const drain = async () => {
+        const pages: string[] = [];
+        for await (const xml of fetchAllRcnFeaturePages()) {
+          pages.push(xml);
+        }
+        return pages;
+      };
+      const result = drain();
+
+      await vi.advanceTimersByTimeAsync(2000);
+      await expect(result).resolves.toHaveLength(1);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('gives up after repeated transient network failures, without retrying forever', async () => {
+    vi.useFakeTimers();
+    try {
+      const fetchMock = vi.fn().mockRejectedValue(new TypeError('fetch failed'));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const drain = async () => {
+        for await (const xml of fetchAllRcnFeaturePages()) {
+          void xml;
+        }
+      };
+      const expectation = expect(drain()).rejects.toThrow(/fetch failed/);
+
+      await vi.advanceTimersByTimeAsync(2000 + 4000 + 6000 + 8000);
+      await expectation;
+      expect(fetchMock).toHaveBeenCalledTimes(5);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('does not retry a non-ok HTTP response or an exception report (deterministic, not transient)', async () => {
+    mockFetchSequence([{ xml: '', ok: false, status: 403 }]);
+
+    const drain = async () => {
+      for await (const xml of fetchAllRcnFeaturePages()) {
+        void xml;
+      }
+    };
+
+    await expect(drain()).rejects.toThrow(/HTTP 403/);
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
 });
