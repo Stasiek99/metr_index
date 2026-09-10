@@ -9,15 +9,19 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "lint": "eslint .",
+    "test": "vitest run",
     "etl:nbp:download": "tsx src/etl/nbp/download.ts"
   },
   "dependencies": {
+    "exceljs": "^4.4.0",
     "express": "^5.2.1"
   },
   "devDependencies": {
+    "@metr-index/shared": "^0.0.0",
     "@types/express": "^5.0.6",
     "@types/node": "^24.13.4",
     "tsx": "^4.23.13",
-    "typescript": "~6.0.2"
+    "typescript": "~6.0.2",
+    "vitest": "^4.0.8"
   }
 }
