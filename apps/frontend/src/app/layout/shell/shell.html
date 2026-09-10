@@ -29,22 +29,30 @@
   <div class="shell__body">
     <aside class="shell__sidebar">
       <h2>Filtry</h2>
-      <label class="shell__field">
-        <span>Rynek</span>
-        <select disabled>
-          <option>Wszystkie</option>
-          <option>Pierwotny</option>
-          <option>Wtórny</option>
-        </select>
-      </label>
-      <label class="shell__field">
-        <span>Typ ceny</span>
-        <select disabled>
-          <option>Wszystkie</option>
-          <option>Ofertowa</option>
-          <option>Transakcyjna</option>
-        </select>
-      </label>
+      <div class="shell__field">
+        <span id="filter-market-label">Rynek</span>
+        <p-selectbutton
+          [options]="marketOptions"
+          optionLabel="label"
+          optionValue="value"
+          [allowEmpty]="false"
+          [ngModel]="filters.market()"
+          (ngModelChange)="filters.market.set($event)"
+          ariaLabelledBy="filter-market-label"
+        />
+      </div>
+      <div class="shell__field">
+        <span id="filter-price-type-label">Typ ceny</span>
+        <p-selectbutton
+          [options]="priceTypeOptions"
+          optionLabel="label"
+          optionValue="value"
+          [allowEmpty]="false"
+          [ngModel]="filters.priceType()"
+          (ngModelChange)="filters.priceType.set($event)"
+          ariaLabelledBy="filter-price-type-label"
+        />
+      </div>
     </aside>
 
     <main class="shell__content">

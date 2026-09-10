@@ -1,0 +1,24 @@
+<section class="price-trends">
+  <h1>Trendy cen — Warszawa</h1>
+
+  <p class="price-trends__caption">
+    @if (usesRcn() && usesNbp()) {
+      Mediana z rejestru RCN (realne transakcje notarialne) tam, gdzie jest dostępna, a dla
+      starszych kwartałów — średnia NBP (jedyna dostępna statystyka tego źródła).
+    } @else if (usesRcn()) {
+      Mediana z rejestru RCN — realne transakcje notarialne.
+    } @else {
+      Średnia NBP — jedyna dostępna statystyka dla tego źródła (NBP nie publikuje mediany).
+    }
+  </p>
+
+  @if (loading()) {
+    <p class="price-trends__status">Ładowanie danych...</p>
+  } @else if (error()) {
+    <p class="price-trends__status price-trends__status--error">{{ error() }}</p>
+  } @else if (!hasData()) {
+    <p class="price-trends__status">Brak danych dla wybranych filtrów.</p>
+  } @else {
+    <div echarts [options]="chartOption()" class="price-trends__chart"></div>
+  }
+</section>
