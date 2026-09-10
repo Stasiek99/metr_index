@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 // static.nbp.pl (unlike nbp.pl / wp-content PDFs) sits outside the Cloudflare
 // bot-detection that blocks plain HTTP clients — confirmed manually, see ROADMAP.md sekcja 6.
-const SOURCE_URL = 'https://static.nbp.pl/dane/rynek-nieruchomosci/ceny_mieszkan.xlsx';
+export const SOURCE_URL = 'https://static.nbp.pl/dane/rynek-nieruchomosci/ceny_mieszkan.xlsx';
 const XLSX_CONTENT_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
 const OUTPUT_DIR = path.resolve(import.meta.dirname, '../../../data/raw/nbp');

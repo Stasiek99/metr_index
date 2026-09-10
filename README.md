@@ -41,6 +41,18 @@ Backend (`http://localhost:3000`, healthcheck pod `/api/health`):
 npm run dev --workspace=@metr-index/backend
 ```
 
+## Dane: pobranie i zasilenie bazy (NBP)
+
+```bash
+npm run etl:nbp:download --workspace=@metr-index/backend   # pobiera ceny_mieszkan.xlsx
+npm run db:migrate --workspace=@metr-index/backend          # tworzy/aktualizuje schemat SQLite
+npm run etl:nbp:seed --workspace=@metr-index/backend        # pobiera + parsuje + zapisuje (robi wszystko powyżej)
+```
+
+Baza: `apps/backend/data/db.sqlite` (SQLite, nieśledzona przez git — patrz `.gitignore`).
+`etl:nbp:seed` jest idempotentny — ponowne uruchomienie aktualizuje istniejące wiersze
+zamiast je duplikować (klucz: city + quarter + market + priceType + dataSource).
+
 ## Lint i formatowanie
 
 ```bash
