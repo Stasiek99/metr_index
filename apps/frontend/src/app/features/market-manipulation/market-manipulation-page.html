@@ -1,0 +1,23 @@
+<section class="market-manipulation">
+  <h1>Manipulacje — cena ofertowa vs transakcyjna</h1>
+
+  <p class="market-manipulation__caption">
+    Rozjazd między ceną z ogłoszenia a realną ceną z aktu notarialnego, osobno dla rynku
+    pierwotnego i wtórnego (dane NBP — jedyne źródło z obiema cenami dla tego samego
+    kwartału; RCN ma wyłącznie ceny transakcyjne).
+  </p>
+
+  @if (loading()) {
+    <p class="market-manipulation__status">Ładowanie danych...</p>
+  } @else if (error()) {
+    <p class="market-manipulation__status market-manipulation__status--error">{{ error() }}</p>
+  } @else if (!hasData()) {
+    <p class="market-manipulation__status">Brak danych do wyliczenia spreadu.</p>
+  } @else {
+    <h2>Rynek pierwotny</h2>
+    <div echarts [options]="primaryOption()" class="market-manipulation__chart"></div>
+
+    <h2>Rynek wtórny</h2>
+    <div echarts [options]="secondaryOption()" class="market-manipulation__chart"></div>
+  }
+</section>

@@ -1,0 +1,18 @@
+.market-manipulation__caption {
+  color: var(--p-text-muted-color, #6b7280);
+  font-size: 0.875rem;
+  max-width: 60ch;
+}
+
+.market-manipulation__status {
+  color: var(--p-text-muted-color, #6b7280);
+}
+
+.market-manipulation__status--error {
+  color: var(--p-red-500, #dc2626);
+}
+
+.market-manipulation__chart {
+  height: 360px;
+  margin-bottom: 24px;
+}
