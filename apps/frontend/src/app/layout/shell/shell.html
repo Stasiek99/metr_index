@@ -1,0 +1,54 @@
+<div class="shell">
+  <header class="shell__nav">
+    <span class="shell__brand">Metr Index</span>
+    <nav>
+      @for (link of navLinks; track link.path) {
+        <a [routerLink]="link.path" routerLinkActive="is-active">{{ link.label }}</a>
+      }
+    </nav>
+
+    <button
+      pButton
+      type="button"
+      variant="text"
+      rounded
+      iconOnly
+      severity="secondary"
+      class="shell__theme-toggle"
+      [attr.aria-label]="theme.isDark() ? 'Włącz jasny motyw' : 'Włącz ciemny motyw'"
+      (click)="theme.toggle()"
+    >
+      @if (theme.isDark()) {
+        <svg data-p-icon="sun"></svg>
+      } @else {
+        <svg data-p-icon="moon"></svg>
+      }
+    </button>
+  </header>
+
+  <div class="shell__body">
+    <aside class="shell__sidebar">
+      <h2>Filtry</h2>
+      <label class="shell__field">
+        <span>Rynek</span>
+        <select disabled>
+          <option>Wszystkie</option>
+          <option>Pierwotny</option>
+          <option>Wtórny</option>
+        </select>
+      </label>
+      <label class="shell__field">
+        <span>Typ ceny</span>
+        <select disabled>
+          <option>Wszystkie</option>
+          <option>Ofertowa</option>
+          <option>Transakcyjna</option>
+        </select>
+      </label>
+    </aside>
+
+    <main class="shell__content">
+      <router-outlet />
+    </main>
+  </div>
+</div>
