@@ -3,7 +3,9 @@ import type { PriceSpreadRecord } from '@metr-index/shared';
 import { NgxEchartsDirective, provideEchartsCore } from 'ngx-echarts';
 import { PricesApi } from '../../core/api/prices-api';
 import { echarts } from '../../core/echarts/echarts-setup';
-import { buildSpreadChartOption } from './spread-chart-options';
+import { formatPercent } from '../../core/format/price-format';
+import { buildSpreadChartOption, buildSpreadTrendChartOption } from './spread-chart-options';
+import { latestSpreadByMarket } from './spread-metrics';
 
 const WARSAW = 'Warszawa';
 
@@ -28,6 +30,9 @@ export class MarketManipulationPage {
   protected readonly secondaryOption = computed(() =>
     buildSpreadChartOption(this.rows().filter((row) => row.market === 'secondary')),
   );
+  protected readonly trendOption = computed(() => buildSpreadTrendChartOption(this.rows()));
+  protected readonly latestSpread = computed(() => latestSpreadByMarket(this.rows()));
+  protected readonly formatPercent = formatPercent;
 
   constructor() {
     this.loading.set(true);

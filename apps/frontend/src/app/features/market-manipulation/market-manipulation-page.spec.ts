@@ -46,16 +46,36 @@ describe('MarketManipulationPage', () => {
       (r) => r.url === '/api/prices/spread' && r.params.get('city') === 'Warszawa',
     );
     req.flush([
-      record({ market: 'primary', quarter: '2020Q1' }),
-      record({ market: 'secondary', quarter: '2020Q1' }),
+      record({ market: 'primary', quarter: '2020Q1', spreadPercent: 12.3 }),
+      record({ market: 'secondary', quarter: '2020Q1', spreadPercent: 4.5 }),
     ]);
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
     const charts = compiled.querySelectorAll('.market-manipulation__chart');
-    expect(charts).toHaveLength(2);
+    expect(charts).toHaveLength(3);
     expect(compiled.textContent).toContain('Rynek pierwotny');
     expect(compiled.textContent).toContain('Rynek wtórny');
+    expect(compiled.textContent).toContain('Trend rozjazdu');
+  });
+
+  it('shows the latest spread% per market as a KPI', () => {
+    const fixture = TestBed.createComponent(MarketManipulationPage);
+    fixture.detectChanges();
+
+    httpMock
+      .expectOne((r) => r.url === '/api/prices/spread')
+      .flush([
+        record({ market: 'primary', quarter: '2019Q4', spreadPercent: 5 }),
+        record({ market: 'primary', quarter: '2020Q1', spreadPercent: 12.3 }),
+        record({ market: 'secondary', quarter: '2020Q1', spreadPercent: 4.5 }),
+      ]);
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('12.3%');
+    expect(text).toContain('4.5%');
+    expect(text).not.toContain('5.0%');
   });
 
   it('shows an empty-state message when there is no spread data', () => {

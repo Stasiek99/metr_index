@@ -14,10 +14,28 @@
   } @else if (!hasData()) {
     <p class="market-manipulation__status">Brak danych do wyliczenia spreadu.</p>
   } @else {
+    <div class="market-manipulation__kpis">
+      @if (latestSpread().primary; as p) {
+        <div class="market-manipulation__kpi">
+          <span class="market-manipulation__kpi-label">Rynek pierwotny ({{ p.quarter }})</span>
+          <span class="market-manipulation__kpi-value">{{ formatPercent(p.spreadPercent) }}</span>
+        </div>
+      }
+      @if (latestSpread().secondary; as s) {
+        <div class="market-manipulation__kpi">
+          <span class="market-manipulation__kpi-label">Rynek wtórny ({{ s.quarter }})</span>
+          <span class="market-manipulation__kpi-value">{{ formatPercent(s.spreadPercent) }}</span>
+        </div>
+      }
+    </div>
+
     <h2>Rynek pierwotny</h2>
     <div echarts [options]="primaryOption()" class="market-manipulation__chart"></div>
 
     <h2>Rynek wtórny</h2>
     <div echarts [options]="secondaryOption()" class="market-manipulation__chart"></div>
+
+    <h2>Trend rozjazdu (%) w czasie</h2>
+    <div echarts [options]="trendOption()" class="market-manipulation__chart"></div>
   }
 </section>
