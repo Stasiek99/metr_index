@@ -4,6 +4,8 @@ html,
 body {
   height: 100%;
   margin: 0;
+  background: var(--p-content-background, #ffffff);
+  color: var(--p-text-color, inherit);
 }
 
 body {

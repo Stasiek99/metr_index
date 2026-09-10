@@ -6,6 +6,24 @@
         <a [routerLink]="link.path" routerLinkActive="is-active">{{ link.label }}</a>
       }
     </nav>
+
+    <button
+      pButton
+      type="button"
+      variant="text"
+      rounded
+      iconOnly
+      severity="secondary"
+      class="shell__theme-toggle"
+      [attr.aria-label]="theme.isDark() ? 'Włącz jasny motyw' : 'Włącz ciemny motyw'"
+      (click)="theme.toggle()"
+    >
+      @if (theme.isDark()) {
+        <svg data-p-icon="sun"></svg>
+      } @else {
+        <svg data-p-icon="moon"></svg>
+      }
+    </button>
   </header>
 
   <div class="shell__body">
