@@ -44,8 +44,41 @@ interface RcnFeaturePage {
   nextUrl: string | null;
 }
 
+const MAX_FETCH_ATTEMPTS = 5;
+const RETRY_DELAY_MS = 2000;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// A full Warszawa pull is hundreds of sequential requests over several minutes — long
+// enough that a transient connection drop is expected, not exceptional. Observed for real
+// during two separate full unbounded runs (2026-09-10): `fetch` itself threw
+// `TypeError: fetch failed` (cause: ECONNRESET) after 178 pages the first time and 298 the
+// second — different points each time, consistent with the remote server occasionally
+// dropping a connection rather than a fixed request-count limit — killing the whole seed
+// even though every already-fetched page had been safely upserted. 3 attempts wasn't
+// always enough to ride out the second failure, hence 5. Retrying only wraps the `fetch()`
+// call itself (a network-level failure) — an HTTP error status or an OGC exception report
+// is a deterministic response from the server, not a transient hiccup, so those still
+// throw immediately rather than retrying something that will just fail the same way again.
+async function fetchWithRetry(url: string, init: RequestInit): Promise<Response> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= MAX_FETCH_ATTEMPTS; attempt++) {
+    try {
+      return await fetch(url, init);
+    } catch (error) {
+      lastError = error;
+      if (attempt < MAX_FETCH_ATTEMPTS) {
+        await sleep(RETRY_DELAY_MS * attempt);
+      }
+    }
+  }
+  throw lastError;
+}
+
 async function fetchRcnFeaturePage(url: string): Promise<RcnFeaturePage> {
-  const response = await fetch(url, {
+  const response = await fetchWithRetry(url, {
     headers: {
       // Plain fetch works today, but a realistic UA keeps this resilient — same reasoning
       // as the NBP downloader (see etl/nbp/download.ts).

@@ -3,8 +3,9 @@
 
   <p class="price-trends__caption">
     @if (usesRcn() && usesNbp()) {
-      Mediana z rejestru RCN (realne transakcje notarialne) tam, gdzie jest dostępna, a dla
-      starszych kwartałów — średnia NBP (jedyna dostępna statystyka tego źródła).
+      Dwie osobne serie: średnia NBP i mediana z rejestru RCN (realne transakcje notarialne) —
+      mediana bywa niższa od średniej, a RCN pojawia się tylko tam, gdzie ma wystarczająco dużo
+      transakcji, więc linie nie zawsze pokrywają te same kwartały.
     } @else if (usesRcn()) {
       Mediana z rejestru RCN — realne transakcje notarialne.
     } @else {
@@ -20,5 +21,36 @@
     <p class="price-trends__status">Brak danych dla wybranych filtrów.</p>
   } @else {
     <div echarts [options]="chartOption()" class="price-trends__chart"></div>
+
+    <div class="price-trends__table-toolbar">
+      <button pButton type="button" size="small" (click)="dt.exportCSV()">
+        <svg data-p-icon="download"></svg>
+        Eksportuj CSV
+      </button>
+    </div>
+
+    <p-table
+      #dt
+      [value]="tableRows()"
+      [paginator]="tableRows().length > 10"
+      [rows]="10"
+      dataKey="quarter"
+      exportFilename="ceny-warszawa"
+    >
+      <ng-template #header>
+        <tr>
+          <th>Kwartał</th>
+          <th>Cena/m²</th>
+          <th>Źródło</th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-row>
+        <tr>
+          <td>{{ row.quarter }}</td>
+          <td>{{ row.pricePerM2 }}</td>
+          <td>{{ row.source }}</td>
+        </tr>
+      </ng-template>
+    </p-table>
   }
 </section>

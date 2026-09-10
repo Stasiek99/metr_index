@@ -100,7 +100,7 @@ describe('PriceTrendsPage', () => {
     req.flush([]);
   });
 
-  it('merges NBP and RCN rows for the same quarter, preferring the RCN median', () => {
+  it('keeps NBP and RCN rows for the same quarter separate (no merging) and shows both in the table', () => {
     const fixture = TestBed.createComponent(PriceTrendsPage);
     fixture.detectChanges();
 
@@ -112,6 +112,8 @@ describe('PriceTrendsPage', () => {
       ]);
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Mediana z rejestru RCN');
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Dwie osobne serie');
+    expect((fixture.nativeElement as HTMLElement).querySelectorAll('tbody tr')).toHaveLength(2);
   });
 });

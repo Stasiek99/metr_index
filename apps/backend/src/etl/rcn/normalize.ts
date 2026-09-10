@@ -24,8 +24,24 @@ export interface NormalizeRcnResult {
     missingArea: number;
     invalidDate: number;
     unknownMarket: number;
+    implausiblePrice: number;
   };
 }
+
+// Found by inspecting a live Warszawa pull (2026-09-10, tens of thousands of raw rows
+// analyzed via a histogram of price_per_m2 while the fetch was running): a huge, sharply
+// isolated spike of roughly 15% of records sits under 500 zł/m² — price_gross looks like a
+// plausible amount on its own, but paired with an area_m2 in the hundreds/thousands
+// (implausible for a single "lokal"), which reeks of partial-share sales ("sprzedaż
+// udziału"), corrections, or a corrupted area field, not real whole-unit market prices.
+// Real Warszawa prices have never historically gone below ~2500 zł/m² even at their
+// cheapest (2006), and the distribution tapers off smoothly above ~1000 into plausible
+// territory — so 1000 is a safe floor with real margin, not a value carved out of the
+// legitimate range. The ceiling of 100000 is set well above the highest genuine luxury
+// sales observed (~68000 zł/m²) but rejects the rare (2-in-66k) records like a
+// 2m²/180000zł "lokal" that are obvious data defects.
+const MIN_PLAUSIBLE_PRICE_PER_M2 = 1000;
+const MAX_PLAUSIBLE_PRICE_PER_M2 = 100_000;
 
 // Only Warszawa is fetched today (see wfsClient.ts's WARSAW_TERYT filter), but the map
 // keeps city resolution explicit rather than hardcoding the string here too.
@@ -45,11 +61,22 @@ const MARKET_BY_RAW_VALUE: Record<string, RcnMarket> = {
 // through Date parsing.
 const DATE_PREFIX = /^(\d{4})-(\d{2})-(\d{2})/;
 
+// Found in a full Warszawa pull (2026-09-10): a real record with transaction_date
+// "0201-02-02" — a 4-digit year that matches DATE_PREFIX's regex but obviously isn't a
+// real year (nobody sold flats in Warsaw in the year 201). Bounds are wide on purpose —
+// RCN's actual coverage starts around 2006, but there's no reason to couple date
+// validity to that, only to reject values that are structurally the wrong shape.
+const MIN_PLAUSIBLE_YEAR = 1990;
+const MAX_PLAUSIBLE_YEAR = 2100;
+
 function parseTransactionDate(rawDate: string): { isoDate: string; quarter: string } | null {
   const match = DATE_PREFIX.exec(rawDate.trim());
   if (!match) return null;
 
   const [, year, month, day] = match;
+  const yearNum = Number(year);
+  if (yearNum < MIN_PLAUSIBLE_YEAR || yearNum > MAX_PLAUSIBLE_YEAR) return null;
+
   const monthNum = Number(month);
   if (monthNum < 1 || monthNum > 12) return null;
 
@@ -81,7 +108,7 @@ function parseStreet(rawAddress: string | null): string | null {
  */
 export function normalizeRcnFeatures(features: RcnRawFeature[]): NormalizeRcnResult {
   const transactions: NormalizedRcnTransaction[] = [];
-  const skipped = { missingArea: 0, invalidDate: 0, unknownMarket: 0 };
+  const skipped = { missingArea: 0, invalidDate: 0, unknownMarket: 0, implausiblePrice: 0 };
 
   for (const feature of features) {
     if (feature.areaM2 === null || feature.areaM2 <= 0) {
@@ -101,6 +128,12 @@ export function normalizeRcnFeatures(features: RcnRawFeature[]): NormalizeRcnRes
       continue;
     }
 
+    const pricePerM2 = feature.priceGross / feature.areaM2;
+    if (pricePerM2 < MIN_PLAUSIBLE_PRICE_PER_M2 || pricePerM2 > MAX_PLAUSIBLE_PRICE_PER_M2) {
+      skipped.implausiblePrice++;
+      continue;
+    }
+
     transactions.push({
       id: feature.id,
       city: CITY_BY_TERYT[feature.teryt] ?? feature.teryt,
@@ -111,7 +144,7 @@ export function normalizeRcnFeatures(features: RcnRawFeature[]): NormalizeRcnRes
       market,
       priceGross: feature.priceGross,
       areaM2: feature.areaM2,
-      pricePerM2: feature.priceGross / feature.areaM2,
+      pricePerM2,
       rooms: feature.rooms,
       floor: feature.floor,
       rawAddress: feature.address,

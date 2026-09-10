@@ -1,35 +1,60 @@
-import type { PriceRecord } from '@metr-index/shared';
+import type { DataSource, PriceRecord } from '@metr-index/shared';
 import type { EChartsCoreOption } from 'echarts/core';
+import { formatPricePerM2 } from './price-format';
 
-// A quarter can have both an NBP mean row and an RCN median row for the same
-// market/priceType (only possible when priceType = 'transaction', since RCN never
-// has offer prices). Per ROADMAP.md sekcja 4a, RCN's median is the preferred, more
-// realistic statistic — it wins whenever both are present for the same quarter.
-export function mergePreferringRcn(rows: PriceRecord[]): PriceRecord[] {
-  const byQuarter = new Map<string, PriceRecord>();
-  for (const row of rows) {
-    const existing = byQuarter.get(row.quarter);
-    if (!existing || row.dataSource === 'rcn') {
-      byQuarter.set(row.quarter, row);
-    }
-  }
-  return [...byQuarter.values()].sort((a, b) => a.quarter.localeCompare(b.quarter));
+// NBP (mean) and RCN (median) are plotted as two independent series rather than merged
+// into one line. They were merged once, preferring RCN whenever both existed for a
+// quarter — but RCN's median runs systematically below NBP's mean most of the time (an
+// expected property of median vs. mean, not an error), and RCN drops in and out of
+// coverage per quarter (only emitted once a group has enough raw transactions — see
+// rcnTransactionsRepository.ts). Splicing those into one line created a misleading step
+// every time RCN appeared/disappeared, most visibly right after 2017Q1: real bug data
+// fixed that quarter, but the line still looked like it "dipped" because RCN's lower,
+// available-then-not-available values were silently swapped in and out of one line.
+// `connectNulls: false` on each series means a quarter with no data for that source is a
+// real gap, not a value invented by interpolation.
+interface SeriesDef {
+  dataSource: DataSource;
+  name: string;
 }
 
-function describeSource(row: PriceRecord): string {
-  return row.dataSource === 'rcn' ? 'RCN, mediana' : 'NBP, średnia';
+const SERIES_DEFS: SeriesDef[] = [
+  { dataSource: 'nbp', name: 'NBP, średnia' },
+  { dataSource: 'rcn', name: 'RCN, mediana' },
+];
+
+function seriesKey(quarter: string, dataSource: DataSource): string {
+  return `${quarter}|${dataSource}`;
 }
 
-function formatPrice(pricePerM2: number): string {
-  return `${Math.round(pricePerM2).toLocaleString('pl-PL')} zł/m²`;
+interface TooltipPoint {
+  axisValue?: string;
+  seriesName?: string;
+  value?: unknown;
 }
 
 export function buildPriceTrendChartOption(rows: PriceRecord[]): EChartsCoreOption {
+  const quarters = [...new Set(rows.map((row) => row.quarter))].sort((a, b) => a.localeCompare(b));
+  const byKey = new Map(rows.map((row) => [seriesKey(row.quarter, row.dataSource), row]));
+
+  const series = SERIES_DEFS.map((def) => ({
+    type: 'line' as const,
+    name: def.name,
+    smooth: true,
+    connectNulls: false,
+    showSymbol: rows.length < 40,
+    data: quarters.map((quarter) => {
+      const row = byKey.get(seriesKey(quarter, def.dataSource));
+      return row ? Math.round(row.pricePerM2) : null;
+    }),
+  }));
+
   return {
-    grid: { left: 64, right: 24, top: 24, bottom: 32 },
+    grid: { left: 64, right: 24, top: 24, bottom: 56 },
+    legend: { bottom: 0 },
     xAxis: {
       type: 'category',
-      data: rows.map((row) => row.quarter),
+      data: quarters,
     },
     yAxis: {
       type: 'value',
@@ -38,27 +63,17 @@ export function buildPriceTrendChartOption(rows: PriceRecord[]): EChartsCoreOpti
     tooltip: {
       trigger: 'axis',
       formatter: (rawParams: unknown) => {
-        const params = Array.isArray(rawParams) ? rawParams[0] : rawParams;
-        const dataIndex = (params as { dataIndex?: number } | undefined)?.dataIndex;
-        const row = dataIndex === undefined ? undefined : rows[dataIndex];
-        if (!row) {
-          return '';
+        const params = (Array.isArray(rawParams) ? rawParams : [rawParams]) as TooltipPoint[];
+        let quarterLabel: string | undefined;
+        const lines: string[] = [];
+        for (const point of params) {
+          if (point.value === null || point.value === undefined) continue;
+          quarterLabel ??= point.axisValue;
+          lines.push(`${point.seriesName}: ${formatPricePerM2(Number(point.value))}`);
         }
-        return [
-          row.quarter,
-          formatPrice(row.pricePerM2),
-          `<span style="opacity:0.7">${describeSource(row)}</span>`,
-        ].join('<br/>');
+        return lines.length === 0 ? '' : [quarterLabel, ...lines].join('<br/>');
       },
     },
-    series: [
-      {
-        type: 'line',
-        name: 'Cena/m²',
-        smooth: true,
-        showSymbol: rows.length < 40,
-        data: rows.map((row) => Math.round(row.pricePerM2)),
-      },
-    ],
+    series,
   };
 }

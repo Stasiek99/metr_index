@@ -1,16 +1,20 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import type { PriceRecord } from '@metr-index/shared';
+import { Download } from '@primeicons/angular/download';
 import { NgxEchartsDirective, provideEchartsCore } from 'ngx-echarts';
+import { ButtonModule } from 'primeng/button';
+import { TableModule } from 'primeng/table';
 import { PricesApi } from '../../core/api/prices-api';
 import { PriceFilters } from '../../core/filters/price-filters';
-import { buildPriceTrendChartOption, mergePreferringRcn } from './chart-options';
+import { buildPriceTrendChartOption } from './chart-options';
 import { echarts } from './echarts-setup';
+import { buildPriceTableRows } from './table-rows';
 
 const WARSAW = 'Warszawa';
 
 @Component({
   selector: 'app-price-trends-page',
-  imports: [NgxEchartsDirective],
+  imports: [NgxEchartsDirective, TableModule, ButtonModule, Download],
   providers: [provideEchartsCore({ echarts })],
   templateUrl: './price-trends-page.html',
   styleUrl: './price-trends-page.scss',
@@ -27,6 +31,7 @@ export class PriceTrendsPage {
   protected readonly usesRcn = computed(() => this.rows().some((row) => row.dataSource === 'rcn'));
   protected readonly usesNbp = computed(() => this.rows().some((row) => row.dataSource === 'nbp'));
   protected readonly chartOption = computed(() => buildPriceTrendChartOption(this.rows()));
+  protected readonly tableRows = computed(() => buildPriceTableRows(this.rows()));
 
   constructor() {
     effect((onCleanup) => {
@@ -43,7 +48,7 @@ export class PriceTrendsPage {
       this.pricesApi.queryPrices({ city: WARSAW, market, priceType }).subscribe({
         next: (rows) => {
           if (cancelled) return;
-          this.rows.set(mergePreferringRcn(rows));
+          this.rows.set(rows);
           this.loading.set(false);
         },
         error: () => {
