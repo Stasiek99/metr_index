@@ -40,6 +40,13 @@ function toNullableNumber(value: unknown): number | null {
  * only recorded at the whole-transaction level (tran_cena_brutto) rather than allocated
  * per unit. Without a usable price these can't contribute to price_per_m2, so they're
  * filtered out here instead of failing later during normalization.
+ *
+ * How common this is varies enormously by city/powiat, not just the odd stray record:
+ * confirmed live (2026-09-11) that Lublin (teryt 0663) and Szczecin (teryt 3262) each
+ * have ~99.9% of their ms:lokale rows missing lok_cena_brutto (999/1000 in a real,
+ * reproducible sample for both — not a fluke of one page), vs. ~0.3% for Warszawa. Some
+ * local offices apparently record almost none of their transactions at the per-unit price
+ * level. Real, verified per-city gap in the source — not a bug here.
  */
 export function parseRcnFeaturePage(xml: string): ParsedRcnPage {
   const parsed: unknown = xmlParser.parse(xml);

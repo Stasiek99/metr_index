@@ -3,9 +3,9 @@ export const BDL_API_URL = 'https://bdl.stat.gov.pl/api/v1';
 // Every major city is tracked as its own powiat-level unit in GUS's Bank Danych Lokalnych
 // ("Powiat m. <city>"), found via `/units/search?name=<city>` and confirmed live
 // (2026-09-11): `/data/by-unit/<id>?var-id=...` returns a real, non-empty series for both
-// variables below, for every city here. Matches NBP's own "7 miast" grouping (ROADMAP.md
-// sekcja 6: Warszawa + Gdańsk/Gdynia/Kraków/Łódź/Poznań/Wrocław), so all three data sources
-// (NBP, RCN, GUS) cover the identical city set for Faza 6's comparison view.
+// variables below, for every city here. Covers all 17 cities NBP publishes (ROADMAP.md
+// sekcja 6: the 16 wojewódzkie cities + Gdynia), so GUS backs every NBP-listed city the UI
+// lets users select — not just the "7 miast" default selection.
 export const WARSAW_UNIT_ID = '071412865000';
 
 export const CITY_UNIT_IDS: Record<string, string> = {
@@ -16,6 +16,16 @@ export const CITY_UNIT_IDS: Record<string, string> = {
   Poznań: '023016264000',
   Gdańsk: '042214361000',
   Gdynia: '042214362000',
+  Białystok: '062013761000',
+  Bydgoszcz: '040410661000',
+  Katowice: '012414869000',
+  Kielce: '052615261000',
+  Lublin: '060611163000',
+  Olsztyn: '042815662000',
+  Opole: '031613261000',
+  Rzeszów: '061813563000',
+  Szczecin: '023216562000',
+  'Zielona Góra': '020811462000',
 };
 
 // Subject P3787: "Mediana cen za 1 m2 lokali mieszkalnych sprzedanych w ramach transakcji
