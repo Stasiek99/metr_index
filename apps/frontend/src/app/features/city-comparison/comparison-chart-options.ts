@@ -17,7 +17,15 @@ interface TooltipPoint {
   data?: ComparisonDataPoint | null;
 }
 
-export function buildCityComparisonChartOption(rows: MergedCityPrice[]): EChartsCoreOption {
+export function buildCityComparisonChartOption(
+  rows: MergedCityPrice[],
+  // Which series (by city name) the legend last toggled on/off. Fed back in here — rather
+  // than left for ECharts to track internally — because every filter change rebuilds this
+  // whole option object from scratch; without re-applying it explicitly, ECharts would
+  // reset every series back to visible on the next rebuild, undoing whatever the user just
+  // clicked off in the legend. See city-comparison-page.ts's chartLegendSelectChanged handler.
+  legendSelected: Record<string, boolean> = {},
+): EChartsCoreOption {
   const quarters = [...new Set(rows.map((row) => row.quarter))].sort((a, b) =>
     a.localeCompare(b),
   );
@@ -38,7 +46,7 @@ export function buildCityComparisonChartOption(rows: MergedCityPrice[]): ECharts
 
   return {
     grid: { left: 64, right: 24, top: 24, bottom: 64 },
-    legend: { bottom: 0, type: 'scroll' },
+    legend: { bottom: 0, type: 'scroll', selected: legendSelected },
     xAxis: {
       type: 'category',
       data: quarters,

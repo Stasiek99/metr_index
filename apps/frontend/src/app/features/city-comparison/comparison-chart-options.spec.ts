@@ -43,4 +43,18 @@ describe('buildCityComparisonChartOption', () => {
 
     expect(series(option)[0].data).toEqual([{ value: 10000, dataSource: 'gus' }]);
   });
+
+  it('defaults to an empty legend selection (everything visible) when none is given', () => {
+    const option = buildCityComparisonChartOption([row()]);
+
+    expect(option['legend']).toMatchObject({ selected: {} });
+  });
+
+  it('applies a given legend selection so a previously hidden city stays hidden after rebuild', () => {
+    const option = buildCityComparisonChartOption([row({ city: 'Warszawa' }), row({ city: 'Kraków' })], {
+      Kraków: false,
+    });
+
+    expect(option['legend']).toMatchObject({ selected: { Kraków: false } });
+  });
 });

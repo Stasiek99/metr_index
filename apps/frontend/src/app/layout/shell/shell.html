@@ -53,6 +53,32 @@
           ariaLabelledBy="filter-price-type-label"
         />
       </div>
+      <div class="shell__field">
+        <span id="filter-source-label">Źródło danych</span>
+        <p-selectbutton
+          [options]="dataSourceOptions"
+          optionLabel="label"
+          optionValue="value"
+          [optionDisabled]="isDataSourceOptionDisabled"
+          [allowEmpty]="false"
+          [ngModel]="filters.dataSource()"
+          (ngModelChange)="filters.setDataSource($event)"
+          ariaLabelledBy="filter-source-label"
+        />
+      </div>
+      <div class="shell__field">
+        <span id="filter-stat-type-label">Statystyka</span>
+        <p-selectbutton
+          [options]="statTypeOptions"
+          optionLabel="label"
+          optionValue="value"
+          [optionDisabled]="isStatTypeOptionDisabled"
+          [allowEmpty]="false"
+          [ngModel]="filters.statType()"
+          (ngModelChange)="filters.setStatType($event)"
+          ariaLabelledBy="filter-stat-type-label"
+        />
+      </div>
     </aside>
 
     <main class="shell__content">

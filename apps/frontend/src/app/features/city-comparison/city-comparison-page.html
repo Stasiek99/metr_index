@@ -30,7 +30,12 @@
   } @else if (!hasData()) {
     <p class="city-comparison__status">Brak danych dla wybranych miast/filtrów.</p>
   } @else {
-    <div echarts [options]="chartOption()" class="city-comparison__chart"></div>
+    <div
+      echarts
+      [options]="chartOption()"
+      (chartLegendSelectChanged)="onLegendSelectChanged($event)"
+      class="city-comparison__chart"
+    ></div>
 
     <h2>Ranking wg tempa wzrostu cen</h2>
     <p-table [value]="ranking()" dataKey="city">

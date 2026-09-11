@@ -24,6 +24,15 @@ describe('Shell', () => {
     expect(links.length).toBe(3);
   });
 
+  it('renders the data source and stat type filter fields', () => {
+    const fixture = TestBed.createComponent(Shell);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    expect(compiled.querySelector('#filter-source-label')?.textContent).toBe('Źródło danych');
+    expect(compiled.querySelector('#filter-stat-type-label')?.textContent).toBe('Statystyka');
+  });
+
   it('toggles the app-dark class on the document root when the theme button is clicked', () => {
     const fixture = TestBed.createComponent(Shell);
     fixture.detectChanges();

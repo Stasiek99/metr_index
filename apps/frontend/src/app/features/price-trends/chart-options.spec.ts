@@ -47,12 +47,22 @@ describe('buildPriceTrendChartOption', () => {
   it('plots GUS as a third independent series', () => {
     const rows = [
       record({ quarter: '2018Q1', dataSource: 'nbp', pricePerM2: 7900 }),
+      record({ quarter: '2018Q1', dataSource: 'rcn', statType: 'median', pricePerM2: 7850 }),
       record({ quarter: '2018Q1', dataSource: 'gus', statType: 'median', pricePerM2: 7830 }),
     ];
 
-    const [, , gus] = series(buildPriceTrendChartOption(rows));
+    const gus = series(buildPriceTrendChartOption(rows)).find((s) => s.name === 'GUS, mediana roczna');
 
     expect(gus).toMatchObject({ name: 'GUS, mediana roczna', data: [7830] });
+  });
+
+  it('only includes a series for a source actually present in rows (e.g. when the shared source filter narrows it down)', () => {
+    const rows = [record({ quarter: '2020Q1', dataSource: 'nbp', pricePerM2: 9000 })];
+
+    const built = series(buildPriceTrendChartOption(rows));
+
+    expect(built).toHaveLength(1);
+    expect(built[0]).toMatchObject({ name: 'NBP, średnia' });
   });
 
   it('leaves a null gap for a quarter/series combination with no data, instead of interpolating', () => {

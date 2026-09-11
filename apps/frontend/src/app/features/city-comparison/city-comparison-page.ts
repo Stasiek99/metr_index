@@ -35,13 +35,39 @@ export class CityComparisonPage {
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
 
-  protected readonly mergedRows = computed(() => mergeBestAvailablePrices(this.rows()));
+  // Which series the chart legend currently shows/hides, keyed by city name — see
+  // onLegendSelectChanged and buildCityComparisonChartOption's legendSelected param.
+  private readonly legendSelected = signal<Record<string, boolean>>({});
+
+  // The shared "Źródło danych"/"Statystyka" filters (core/filters/price-filters.ts) narrow
+  // the already-fetched rows client-side before merging — same approach as price-trends.
+  // When left on "all"/"all" this reduces to the original best-available merge; a specific
+  // choice collapses the merge to exactly that one (dataSource, statType) pair per point.
+  protected readonly filteredRows = computed(() => {
+    const dataSource = this.filters.dataSource();
+    const statType = this.filters.statType();
+    return this.rows().filter(
+      (row) =>
+        (dataSource === 'all' || row.dataSource === dataSource) &&
+        (statType === 'all' || row.statType === statType),
+    );
+  });
+
+  protected readonly mergedRows = computed(() => mergeBestAvailablePrices(this.filteredRows()));
   protected readonly hasData = computed(() => this.mergedRows().length > 0);
-  protected readonly chartOption = computed(() => buildCityComparisonChartOption(this.mergedRows()));
+  protected readonly chartOption = computed(() =>
+    buildCityComparisonChartOption(this.mergedRows(), this.legendSelected()),
+  );
   protected readonly ranking = computed(() => rankCitiesByGrowth(this.mergedRows()));
 
   protected readonly formatPricePerM2 = formatPricePerM2;
   protected readonly formatGrowthPercent = formatGrowthPercent;
+
+  // Bound to the chart's (chartLegendSelectChanged) output — ECharts' own
+  // `legendselectchanged` event payload shape, `{ selected: { [seriesName]: boolean } }`.
+  protected onLegendSelectChanged(event: { selected: Record<string, boolean> }): void {
+    this.legendSelected.set(event.selected);
+  }
 
   constructor() {
     this.pricesApi.listCities().subscribe((cities) => this.availableCities.set(cities));

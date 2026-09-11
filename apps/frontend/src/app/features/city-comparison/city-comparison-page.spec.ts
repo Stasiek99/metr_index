@@ -109,6 +109,66 @@ describe('CityComparisonPage', () => {
     req.flush([record({ market: 'secondary' })]);
   });
 
+  it('narrows the merged rows to the selected data source client-side, without refetching', () => {
+    const fixture = TestBed.createComponent(CityComparisonPage);
+    const component = fixture.componentInstance as unknown as {
+      selectedCities: { set: (v: string[]) => void };
+      mergedRows: () => unknown[];
+    };
+    component.selectedCities.set(['Warszawa']);
+    fixture.detectChanges();
+    flushCitiesList();
+
+    httpMock
+      .expectOne((r) => r.url === '/api/prices')
+      .flush([
+        record({ dataSource: 'nbp', statType: 'mean', pricePerM2: 9000 }),
+        record({ dataSource: 'rcn', statType: 'median', pricePerM2: 9500 }),
+      ]);
+
+    // mergeBestAvailablePrices prefers RCN, so before filtering the merged row is RCN's.
+    expect(component.mergedRows()).toHaveLength(1);
+
+    const filters = TestBed.inject(PriceFilters);
+    filters.setDataSource('nbp');
+
+    expect(component.mergedRows()).toEqual([
+      { city: 'Warszawa', quarter: '2020Q1', pricePerM2: 9000, dataSource: 'nbp' },
+    ]);
+    httpMock.expectNone((r) => r.url === '/api/prices');
+  });
+
+  it('keeps a legend-hidden city hidden after a filter change rebuilds the chart option', () => {
+    const fixture = TestBed.createComponent(CityComparisonPage);
+    const component = fixture.componentInstance as unknown as {
+      selectedCities: { set: (v: string[]) => void };
+      onLegendSelectChanged: (event: { selected: Record<string, boolean> }) => void;
+      chartOption: () => Record<string, unknown>;
+    };
+    component.selectedCities.set(['Warszawa', 'Kraków']);
+    fixture.detectChanges();
+    flushCitiesList();
+
+    for (const req of httpMock.match((r) => r.url === '/api/prices')) {
+      req.flush([record({ city: req.request.params.get('city')! })]);
+    }
+
+    component.onLegendSelectChanged({ selected: { Kraków: false, Warszawa: true } });
+    expect(component.chartOption()['legend']).toMatchObject({
+      selected: { Kraków: false, Warszawa: true },
+    });
+
+    const filters = TestBed.inject(PriceFilters);
+    filters.market.set('secondary');
+    for (const req of httpMock.match((r) => r.url === '/api/prices')) {
+      req.flush([record({ city: req.request.params.get('city')!, market: 'secondary' })]);
+    }
+
+    expect(component.chartOption()['legend']).toMatchObject({
+      selected: { Kraków: false, Warszawa: true },
+    });
+  });
+
   it('builds a growth ranking from the merged prices once loaded', () => {
     const fixture = TestBed.createComponent(CityComparisonPage);
     const component = fixture.componentInstance as unknown as {
