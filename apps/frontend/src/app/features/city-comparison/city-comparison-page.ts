@@ -9,7 +9,10 @@ import { PricesApi } from '../../core/api/prices-api';
 import { PriceFilters } from '../../core/filters/price-filters';
 import { echarts } from '../../core/echarts/echarts-setup';
 import { formatPricePerM2 } from '../../core/format/price-format';
-import { buildCityComparisonChartOption } from './comparison-chart-options';
+import {
+  buildCityComparisonChartOption,
+  buildGrowthRankingChartOption,
+} from './comparison-chart-options';
 import { formatGrowthPercent, mergeBestAvailablePrices, rankCitiesByGrowth } from './comparison-metrics';
 
 // NBP's own "7 miast" grouping (ROADMAP.md sekcja 6) — the largest Polish cities by this
@@ -59,6 +62,18 @@ export class CityComparisonPage {
     buildCityComparisonChartOption(this.mergedRows(), this.legendSelected()),
   );
   protected readonly ranking = computed(() => rankCitiesByGrowth(this.mergedRows()));
+  protected readonly hasRanking = computed(() => this.ranking().length > 0);
+  // A one-bar bar chart is a dataviz anti-pattern (nothing to compare against) — with
+  // just one ranked city the table alone already shows the figure, so the bar chart
+  // only renders once there's an actual comparison to make.
+  protected readonly hasRankingChart = computed(() => this.ranking().length >= 2);
+  protected readonly rankingChartOption = computed(() =>
+    buildGrowthRankingChartOption(this.ranking()),
+  );
+  // One row per city — a fixed height either cramps many cities or wastes space for few.
+  protected readonly rankingChartHeightPx = computed(() =>
+    Math.max(160, this.ranking().length * 48 + 48),
+  );
 
   protected readonly formatPricePerM2 = formatPricePerM2;
   protected readonly formatGrowthPercent = formatGrowthPercent;

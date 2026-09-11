@@ -169,7 +169,30 @@ describe('CityComparisonPage', () => {
     });
   });
 
-  it('builds a growth ranking from the merged prices once loaded', () => {
+  it('builds a growth ranking and shows the ranking bar chart once 2+ cities qualify', () => {
+    const fixture = TestBed.createComponent(CityComparisonPage);
+    const component = fixture.componentInstance as unknown as {
+      selectedCities: { set: (v: string[]) => void };
+    };
+    component.selectedCities.set(['Warszawa', 'Kraków']);
+    fixture.detectChanges();
+    flushCitiesList();
+
+    for (const req of httpMock.match((r) => r.url === '/api/prices')) {
+      const city = req.request.params.get('city')!;
+      req.flush([
+        record({ city, quarter: '2015Q1', pricePerM2: 8000, dataSource: 'nbp' }),
+        record({ city, quarter: '2025Q1', pricePerM2: 16000, dataSource: 'rcn', statType: 'median' }),
+      ]);
+    }
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.textContent).toContain('+100.0%');
+    expect(compiled.querySelector('.city-comparison__ranking-chart')).toBeTruthy();
+  });
+
+  it('hides the ranking bar chart (but keeps the table) when only one city qualifies — a one-bar chart has nothing to compare against', () => {
     const fixture = TestBed.createComponent(CityComparisonPage);
     const component = fixture.componentInstance as unknown as {
       selectedCities: { set: (v: string[]) => void };
@@ -186,7 +209,26 @@ describe('CityComparisonPage', () => {
       ]);
     fixture.detectChanges();
 
-    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(text).toContain('+100.0%');
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.textContent).toContain('+100.0%');
+    expect(compiled.querySelector('.city-comparison__ranking-chart')).toBeFalsy();
+    expect(compiled.querySelectorAll('tbody tr')).toHaveLength(1);
+  });
+
+  it('shows a status message instead of the ranking chart/table when every city has under 2 quarters', () => {
+    const fixture = TestBed.createComponent(CityComparisonPage);
+    const component = fixture.componentInstance as unknown as {
+      selectedCities: { set: (v: string[]) => void };
+    };
+    component.selectedCities.set(['Warszawa']);
+    fixture.detectChanges();
+    flushCitiesList();
+
+    httpMock.expectOne((r) => r.url === '/api/prices').flush([record({ quarter: '2020Q1' })]);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.textContent).toContain('Za mało danych do wyliczenia rankingu');
+    expect(compiled.querySelector('.city-comparison__ranking-chart')).toBeFalsy();
   });
 });

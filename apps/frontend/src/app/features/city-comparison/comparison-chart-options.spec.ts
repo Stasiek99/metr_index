@@ -1,5 +1,5 @@
-import { buildCityComparisonChartOption } from './comparison-chart-options';
-import type { MergedCityPrice } from './comparison-metrics';
+import { buildCityComparisonChartOption, buildGrowthRankingChartOption } from './comparison-chart-options';
+import type { CityGrowth, MergedCityPrice } from './comparison-metrics';
 
 function row(overrides: Partial<MergedCityPrice> = {}): MergedCityPrice {
   return {
@@ -56,5 +56,66 @@ describe('buildCityComparisonChartOption', () => {
     });
 
     expect(option['legend']).toMatchObject({ selected: { Kraków: false } });
+  });
+});
+
+function growth(overrides: Partial<CityGrowth> = {}): CityGrowth {
+  return {
+    city: 'Warszawa',
+    firstQuarter: '2015Q1',
+    lastQuarter: '2025Q1',
+    firstPricePerM2: 8000,
+    lastPricePerM2: 16000,
+    growthPercent: 100,
+    ...overrides,
+  };
+}
+
+describe('buildGrowthRankingChartOption', () => {
+  it('puts city names on the category axis in the given (already-ranked) order', () => {
+    const option = buildGrowthRankingChartOption([
+      growth({ city: 'Fast', growthPercent: 80 }),
+      growth({ city: 'Slow', growthPercent: 10 }),
+    ]);
+
+    expect(option['yAxis']).toMatchObject({ data: ['Fast', 'Slow'], inverse: true });
+  });
+
+  it('colors a positive-growth bar blue and rounds its far (right) corners', () => {
+    const option = buildGrowthRankingChartOption([growth({ growthPercent: 42 })]);
+    const bar = (option['series'] as { data: { itemStyle: { color: string; borderRadius: number[] } }[] }[])[0]
+      .data[0];
+
+    expect(bar.itemStyle.color).toBe('#2a78d6');
+    expect(bar.itemStyle.borderRadius).toEqual([0, 4, 4, 0]);
+  });
+
+  it('colors a negative-growth bar red and rounds its far (left) corners', () => {
+    const option = buildGrowthRankingChartOption([growth({ growthPercent: -12 })]);
+    const bar = (option['series'] as { data: { itemStyle: { color: string; borderRadius: number[] } }[] }[])[0]
+      .data[0];
+
+    expect(bar.itemStyle.color).toBe('#e34948');
+    expect(bar.itemStyle.borderRadius).toEqual([4, 0, 0, 4]);
+  });
+
+  it('rounds the plotted growth value to one decimal place', () => {
+    const option = buildGrowthRankingChartOption([growth({ growthPercent: 12.345 })]);
+    const bar = (option['series'] as { data: { value: number }[] }[])[0].data[0];
+
+    expect(bar.value).toBe(12.3);
+  });
+
+  it("labels the tooltip with the city's period and formatted price range", () => {
+    const option = buildGrowthRankingChartOption([
+      growth({ city: 'Warszawa', firstQuarter: '2015Q1', lastQuarter: '2025Q1' }),
+    ]);
+    const formatter = (option['tooltip'] as { formatter: (params: unknown) => string }).formatter;
+
+    const html = formatter({ dataIndex: 0 });
+
+    expect(html).toContain('Warszawa');
+    expect(html).toContain('2015Q1 → 2025Q1');
+    expect(html).toContain('+100.0%');
   });
 });

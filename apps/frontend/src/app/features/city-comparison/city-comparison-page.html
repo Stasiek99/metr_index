@@ -38,25 +38,41 @@
     ></div>
 
     <h2>Ranking wg tempa wzrostu cen</h2>
-    <p-table [value]="ranking()" dataKey="city">
-      <ng-template #header>
-        <tr>
-          <th>Miasto</th>
-          <th>Okres</th>
-          <th>Cena/m² (początek → koniec)</th>
-          <th>Wzrost</th>
-        </tr>
-      </ng-template>
-      <ng-template #body let-row>
-        <tr>
-          <td>{{ row.city }}</td>
-          <td>{{ row.firstQuarter }} → {{ row.lastQuarter }}</td>
-          <td>
-            {{ formatPricePerM2(row.firstPricePerM2) }} → {{ formatPricePerM2(row.lastPricePerM2) }}
-          </td>
-          <td>{{ formatGrowthPercent(row.growthPercent) }}</td>
-        </tr>
-      </ng-template>
-    </p-table>
+    @if (!hasRanking()) {
+      <p class="city-comparison__status">
+        Za mało danych do wyliczenia rankingu (potrzeba co najmniej 2 kwartałów na miasto).
+      </p>
+    } @else {
+      @if (hasRankingChart()) {
+        <div
+          echarts
+          [options]="rankingChartOption()"
+          [style.height.px]="rankingChartHeightPx()"
+          class="city-comparison__ranking-chart"
+        ></div>
+      }
+
+      <p-table [value]="ranking()" dataKey="city">
+        <ng-template #header>
+          <tr>
+            <th>Miasto</th>
+            <th>Okres</th>
+            <th>Cena/m² (początek → koniec)</th>
+            <th>Wzrost</th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-row>
+          <tr>
+            <td>{{ row.city }}</td>
+            <td>{{ row.firstQuarter }} → {{ row.lastQuarter }}</td>
+            <td>
+              {{ formatPricePerM2(row.firstPricePerM2) }} →
+              {{ formatPricePerM2(row.lastPricePerM2) }}
+            </td>
+            <td>{{ formatGrowthPercent(row.growthPercent) }}</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    }
   }
 </section>

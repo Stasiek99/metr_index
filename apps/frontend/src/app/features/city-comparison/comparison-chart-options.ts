@@ -1,6 +1,11 @@
 import type { EChartsCoreOption } from 'echarts/core';
 import { formatPricePerM2 } from '../../core/format/price-format';
-import { describeDataSource, type MergedCityPrice } from './comparison-metrics';
+import {
+  describeDataSource,
+  formatGrowthPercent,
+  type CityGrowth,
+  type MergedCityPrice,
+} from './comparison-metrics';
 
 function seriesKey(city: string, quarter: string): string {
   return `${city}|${quarter}`;
@@ -73,5 +78,92 @@ export function buildCityComparisonChartOption(
       },
     },
     series,
+  };
+}
+
+// Diverging pair (polarity: growth vs. decline), not a categorical palette — one hue
+// per side of the zero baseline, per the project's dataviz guidelines.
+const GROWTH_POSITIVE_COLOR = '#2a78d6';
+const GROWTH_NEGATIVE_COLOR = '#e34948';
+
+interface GrowthBarDataPoint {
+  value: number;
+  itemStyle: { color: string; borderRadius: number[] };
+  label: { position: 'left' | 'right' };
+}
+
+interface GrowthTooltipParam {
+  name?: string;
+  value?: number;
+  dataIndex?: number;
+}
+
+/**
+ * Horizontal diverging bar chart for the growth ranking (ROADMAP.md Faza 6: "Ranking
+ * miast wg tempa wzrostu cen") — a quicker read of relative pace than the table alone,
+ * which stays alongside it for the exact figures (period, start/end price) a bar can't
+ * show. Horizontal because Polish city names are long; `yAxis.inverse` keeps the
+ * already-sorted-descending ranking's #1 city at the top instead of the bottom (ECharts'
+ * default category order runs bottom-to-top).
+ */
+export function buildGrowthRankingChartOption(ranking: CityGrowth[]): EChartsCoreOption {
+  const cities = ranking.map((r) => r.city);
+
+  const data: GrowthBarDataPoint[] = ranking.map((r) => {
+    const positive = r.growthPercent >= 0;
+    return {
+      value: Math.round(r.growthPercent * 10) / 10,
+      itemStyle: {
+        color: positive ? GROWTH_POSITIVE_COLOR : GROWTH_NEGATIVE_COLOR,
+        // 4px rounded data-end, square at the baseline (x=0) — which side is which
+        // flips with the sign, since a negative bar's "far end" is on the left.
+        borderRadius: positive ? [0, 4, 4, 0] : [4, 0, 0, 4],
+      },
+      label: { position: positive ? 'right' : 'left' },
+    };
+  });
+
+  return {
+    // containLabel measures the actual rendered axis labels (long city names, the
+    // "%" axis name) and expands the plot to fit them, instead of a guessed pixel
+    // margin that clips whichever city name turns out to be longest.
+    grid: { left: 16, right: 48, top: 16, bottom: 16, containLabel: true },
+    xAxis: {
+      type: 'value',
+      name: 'Wzrost cen (%)',
+      axisLabel: { formatter: (value: number) => `${value}%` },
+    },
+    yAxis: {
+      type: 'category',
+      data: cities,
+      inverse: true,
+    },
+    tooltip: {
+      trigger: 'item',
+      formatter: (rawParam: unknown) => {
+        const param = rawParam as GrowthTooltipParam;
+        const row = ranking[param.dataIndex ?? -1];
+        if (!row) return '';
+        return (
+          `${row.city}<br/>${row.firstQuarter} → ${row.lastQuarter}<br/>` +
+          `${formatPricePerM2(row.firstPricePerM2)} → ${formatPricePerM2(row.lastPricePerM2)}<br/>` +
+          `<strong>${formatGrowthPercent(row.growthPercent)}</strong>`
+        );
+      },
+    },
+    series: [
+      {
+        type: 'bar' as const,
+        barMaxWidth: 24,
+        data,
+        label: {
+          show: true,
+          formatter: (rawParam: unknown) => {
+            const param = rawParam as GrowthTooltipParam;
+            return formatGrowthPercent(Number(param.value ?? 0));
+          },
+        },
+      },
+    ],
   };
 }
