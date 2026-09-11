@@ -78,6 +78,43 @@ describe('MarketManipulationPage', () => {
     expect(text).not.toContain('5.0%');
   });
 
+  it('lists anomalous quarters and marks them below the trend chart', () => {
+    const fixture = TestBed.createComponent(MarketManipulationPage);
+    fixture.detectChanges();
+
+    httpMock
+      .expectOne((r) => r.url === '/api/prices/spread')
+      .flush([
+        record({ market: 'primary', quarter: '2018Q1', spreadPercent: 10 }),
+        record({ market: 'primary', quarter: '2018Q2', spreadPercent: 10 }),
+        record({ market: 'primary', quarter: '2018Q3', spreadPercent: 10 }),
+        record({ market: 'primary', quarter: '2018Q4', spreadPercent: 10 }),
+        record({ market: 'primary', quarter: '2019Q1', spreadPercent: 10 }),
+        record({ market: 'primary', quarter: '2019Q2', spreadPercent: 40 }),
+      ]);
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Kwartały z anomalią');
+    expect(text).toContain('2019Q2');
+    expect((fixture.nativeElement as HTMLElement).querySelectorAll('.market-manipulation__anomalies li')).toHaveLength(1);
+  });
+
+  it('shows no anomaly section when nothing exceeds the threshold', () => {
+    const fixture = TestBed.createComponent(MarketManipulationPage);
+    fixture.detectChanges();
+
+    httpMock
+      .expectOne((r) => r.url === '/api/prices/spread')
+      .flush([
+        record({ market: 'primary', quarter: '2020Q1', spreadPercent: 12.3 }),
+        record({ market: 'secondary', quarter: '2020Q1', spreadPercent: 4.5 }),
+      ]);
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('Kwartały z anomalią');
+  });
+
   it('shows an empty-state message when there is no spread data', () => {
     const fixture = TestBed.createComponent(MarketManipulationPage);
     fixture.detectChanges();

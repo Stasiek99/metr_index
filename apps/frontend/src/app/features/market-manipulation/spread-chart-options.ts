@@ -1,6 +1,7 @@
 import type { Market, PriceSpreadRecord } from '@metr-index/shared';
 import type { EChartsCoreOption } from 'echarts/core';
 import { formatPercent, formatPricePerM2 } from '../../core/format/price-format';
+import { describeMarket, type SpreadAnomaly } from './spread-metrics';
 
 interface TooltipPoint {
   axisValue?: string;
@@ -66,15 +67,7 @@ export function buildSpreadChartOption(rows: PriceSpreadRecord[]): EChartsCoreOp
   };
 }
 
-interface MarketSeriesDef {
-  market: Market;
-  name: string;
-}
-
-const MARKET_SERIES_DEFS: MarketSeriesDef[] = [
-  { market: 'primary', name: 'Rynek pierwotny' },
-  { market: 'secondary', name: 'Rynek wtórny' },
-];
+const MARKETS: Market[] = ['primary', 'secondary'];
 
 function marketQuarterKey(quarter: string, market: Market): string {
   return `${quarter}|${market}`;
@@ -85,23 +78,46 @@ function marketQuarterKey(quarter: string, market: Market): string {
 // gap, not an interpolated guess), rather than reading it off the tooltip of the raw-price
 // chart above. Takes rows for BOTH markets at once (unlike buildSpreadChartOption, which is
 // called once per market) since the point is comparing the two trends side by side.
-export function buildSpreadTrendChartOption(rows: PriceSpreadRecord[]): EChartsCoreOption {
+//
+// `anomalies` (see spread-metrics.ts — quarters whose spread% is >2 standard deviations
+// from that market's own mean) are marked with a red dot via ECharts `markPoint` rather
+// than a separate chart, so an outlier is visible right where it happened on the trend.
+export function buildSpreadTrendChartOption(
+  rows: PriceSpreadRecord[],
+  anomalies: SpreadAnomaly[] = [],
+): EChartsCoreOption {
   const quarters = [...new Set(rows.map((row) => row.quarter))].sort((a, b) =>
     a.localeCompare(b),
   );
   const byKey = new Map(rows.map((row) => [marketQuarterKey(row.quarter, row.market), row]));
 
-  const series = MARKET_SERIES_DEFS.map((def) => ({
-    type: 'line' as const,
-    name: def.name,
-    smooth: false,
-    connectNulls: false,
-    showSymbol: rows.length < 40,
-    data: quarters.map((quarter) => {
-      const row = byKey.get(marketQuarterKey(quarter, def.market));
-      return row ? Math.round(row.spreadPercent * 10) / 10 : null;
-    }),
-  }));
+  const series = MARKETS.map((market) => {
+    const marketAnomalies = anomalies.filter((a) => a.record.market === market);
+    return {
+      type: 'line' as const,
+      name: describeMarket(market),
+      smooth: false,
+      connectNulls: false,
+      showSymbol: rows.length < 40,
+      data: quarters.map((quarter) => {
+        const row = byKey.get(marketQuarterKey(quarter, market));
+        return row ? Math.round(row.spreadPercent * 10) / 10 : null;
+      }),
+      ...(marketAnomalies.length > 0
+        ? {
+            markPoint: {
+              symbol: 'circle',
+              symbolSize: 14,
+              itemStyle: { color: '#dc2626' },
+              data: marketAnomalies.map((a) => ({
+                name: a.record.quarter,
+                coord: [a.record.quarter, Math.round(a.record.spreadPercent * 10) / 10],
+              })),
+            },
+          }
+        : {}),
+    };
+  });
 
   return {
     grid: { left: 64, right: 24, top: 24, bottom: 56 },

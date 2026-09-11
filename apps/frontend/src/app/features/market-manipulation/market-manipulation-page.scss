@@ -42,3 +42,14 @@
   font-size: 1.75rem;
   font-weight: 600;
 }
+
+.market-manipulation__anomalies {
+  margin: 0 0 24px;
+  padding-left: 20px;
+
+  li {
+    border-left: 3px solid var(--p-red-500, #dc2626);
+    padding-left: 8px;
+    margin-bottom: 4px;
+  }
+}
