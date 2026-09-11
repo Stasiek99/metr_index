@@ -6,8 +6,8 @@ import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
 import { PricesApi } from '../../core/api/prices-api';
 import { PriceFilters } from '../../core/filters/price-filters';
+import { echarts } from '../../core/echarts/echarts-setup';
 import { buildPriceTrendChartOption } from './chart-options';
-import { echarts } from './echarts-setup';
 import { buildPriceTableRows } from './table-rows';
 
 const WARSAW = 'Warszawa';

@@ -1,0 +1,44 @@
+.market-manipulation__caption {
+  color: var(--p-text-muted-color, #6b7280);
+  font-size: 0.875rem;
+  max-width: 60ch;
+}
+
+.market-manipulation__status {
+  color: var(--p-text-muted-color, #6b7280);
+}
+
+.market-manipulation__status--error {
+  color: var(--p-red-500, #dc2626);
+}
+
+.market-manipulation__chart {
+  height: 360px;
+  margin-bottom: 24px;
+}
+
+.market-manipulation__kpis {
+  display: flex;
+  gap: 16px;
+  margin: 16px 0 24px;
+}
+
+.market-manipulation__kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 20px;
+  border: 1px solid var(--p-surface-border, #e2e2e2);
+  border-radius: 8px;
+  min-width: 180px;
+}
+
+.market-manipulation__kpi-label {
+  color: var(--p-text-muted-color, #6b7280);
+  font-size: 0.875rem;
+}
+
+.market-manipulation__kpi-value {
+  font-size: 1.75rem;
+  font-weight: 600;
+}
