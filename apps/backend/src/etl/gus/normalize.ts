@@ -12,12 +12,13 @@ export function expandAnnualMedianToQuarters(
   byYear: Map<string, number>,
   market: Market,
   sourceFile: string,
+  city: string,
 ): PriceRecord[] {
   const records: PriceRecord[] = [];
   for (const [year, pricePerM2] of byYear) {
     for (const quarterSuffix of QUARTER_SUFFIXES) {
       records.push({
-        city: 'Warszawa',
+        city,
         district: null,
         quarter: `${year}${quarterSuffix}`,
         market,

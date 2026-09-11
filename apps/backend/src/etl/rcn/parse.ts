@@ -64,7 +64,13 @@ export function parseRcnFeaturePage(xml: string): ParsedRcnPage {
 
     features.push({
       id: String(lokale['@_gml:id']),
-      teryt: String(lokale['ms:teryt']),
+      // fast-xml-parser's default numeric coercion turns "<ms:teryt>0264</ms:teryt>" (a
+      // real value — Wrocław) into the number 264, silently dropping the leading zero.
+      // Every real teryt here is exactly 4 digits, so padStart is a safe, targeted fix
+      // without disabling number parsing globally (other fields, e.g. lok_cena_brutto,
+      // rely on it). Found for real (2026-09-11): a full Wrocław pull mislabeled all
+      // ~22.7k of its rows as city "264" instead of "Wrocław" before this fix.
+      teryt: String(lokale['ms:teryt']).padStart(4, '0'),
       market: String(lokale['ms:tran_rodzaj_rynku']),
       transactionDate: String(lokale['ms:dok_data']),
       areaM2: toNullableNumber(lokale['ms:lok_pow_uzyt']),

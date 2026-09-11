@@ -15,7 +15,18 @@ const PRICE_TYPE_LABELS: Record<string, PriceType> = {
 const ROMAN_QUARTER_TO_NUMBER: Record<string, string> = { I: '1', II: '2', III: '3', IV: '4' };
 const QUARTER_LABEL_PATTERN = /^(I{1,3}|IV)\s+(\d{4})$/;
 
-const TARGET_CITY = 'Warszawa';
+// Alongside the 17 individual city columns, each block also carries pre-aggregated
+// "N miast" group columns (confirmed by inspecting the real header row: "7 miast",
+// "10 miast", "6 miast bez Warszawy") — these are sums/averages NBP computed itself, not
+// another city, so they're excluded by name rather than by position (a position-based
+// cutoff would silently break if NBP reorders or adds a column, per ROADMAP.md sekcja 7).
+const AGGREGATE_COLUMN_LABELS = new Set(['7 miast', '10 miast', '6 miast bez Warszawy']);
+
+// A handful of city labels carry a footnote marker ("Gdynia*" in "Rynek pierwotny" offer
+// block, "Gdynia**" in its transaction block) that isn't part of the city name.
+function stripFootnoteMarker(label: string): string {
+  return label.replace(/\*+$/, '');
+}
 
 function parseQuarterLabel(label: string): string {
   const match = QUARTER_LABEL_PATTERN.exec(label.trim());
@@ -26,9 +37,14 @@ function parseQuarterLabel(label: string): string {
   return `${year}Q${ROMAN_QUARTER_TO_NUMBER[roman]}`;
 }
 
+interface CityColumn {
+  column: number;
+  city: string;
+}
+
 interface PriceBlock {
   quarterColumn: number;
-  cityColumn: number;
+  cities: CityColumn[];
   priceType: PriceType;
 }
 
@@ -73,20 +89,19 @@ function findPriceBlocks(
     if (!priceType) continue;
 
     const nextQuarterColumn = quarterColumns.find((c) => c > quarterColumn) ?? columnCount + 1;
-    let cityColumn: number | undefined;
-    for (let col = quarterColumn; col < nextQuarterColumn; col++) {
-      if (worksheet.getRow(headerRow).getCell(col).value === TARGET_CITY) {
-        cityColumn = col;
-        break;
-      }
+    const cities: CityColumn[] = [];
+    for (let col = quarterColumn + 1; col < nextQuarterColumn; col++) {
+      const value = worksheet.getRow(headerRow).getCell(col).value;
+      if (typeof value !== 'string' || value.trim().length === 0) continue;
+      const label = value.trim();
+      if (AGGREGATE_COLUMN_LABELS.has(label)) continue;
+      cities.push({ column: col, city: stripFootnoteMarker(label) });
     }
-    if (cityColumn === undefined) {
-      throw new Error(
-        `Could not find "${TARGET_CITY}" column for block starting at column ${quarterColumn}`,
-      );
+    if (cities.length === 0) {
+      throw new Error(`Could not find any city column for block starting at column ${quarterColumn}`);
     }
 
-    blocks.push({ quarterColumn, cityColumn, priceType });
+    blocks.push({ quarterColumn, cities, priceType });
   }
 
   return blocks;
@@ -130,21 +145,24 @@ export function parseNbpWorksheet(worksheet: ExcelJS.Worksheet, sourceFile: stri
       const quarterLabel = worksheet.getRow(row).getCell(block.quarterColumn).value;
       if (quarterLabel == null || quarterLabel === '') break;
 
-      const rawPrice = worksheet.getRow(row).getCell(block.cityColumn).value;
-      if (typeof rawPrice !== 'number') continue;
+      const quarter = parseQuarterLabel(String(quarterLabel));
+      for (const cityColumn of block.cities) {
+        const rawPrice = worksheet.getRow(row).getCell(cityColumn.column).value;
+        if (typeof rawPrice !== 'number') continue;
 
-      records.push({
-        city: TARGET_CITY,
-        district: null,
-        quarter: parseQuarterLabel(String(quarterLabel)),
-        market,
-        priceType: block.priceType,
-        segment: null,
-        statType: 'mean',
-        pricePerM2: rawPrice,
-        dataSource: 'nbp',
-        sourceFile,
-      });
+        records.push({
+          city: cityColumn.city,
+          district: null,
+          quarter,
+          market,
+          priceType: block.priceType,
+          segment: null,
+          statType: 'mean',
+          pricePerM2: rawPrice,
+          dataSource: 'nbp',
+          sourceFile,
+        });
+      }
     }
   }
 

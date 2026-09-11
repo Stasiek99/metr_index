@@ -1,9 +1,22 @@
 export const BDL_API_URL = 'https://bdl.stat.gov.pl/api/v1';
 
-// "Powiat m.st. Warszawa" — Warsaw is tracked as its own powiat-level unit in GUS's Bank
-// Danych Lokalnych. Confirmed live (2026-09-10): `/data/by-unit/<this>?var-id=...` returns
-// a real, non-empty series for both variables below.
+// Every major city is tracked as its own powiat-level unit in GUS's Bank Danych Lokalnych
+// ("Powiat m. <city>"), found via `/units/search?name=<city>` and confirmed live
+// (2026-09-11): `/data/by-unit/<id>?var-id=...` returns a real, non-empty series for both
+// variables below, for every city here. Matches NBP's own "7 miast" grouping (ROADMAP.md
+// sekcja 6: Warszawa + Gdańsk/Gdynia/Kraków/Łódź/Poznań/Wrocław), so all three data sources
+// (NBP, RCN, GUS) cover the identical city set for Faza 6's comparison view.
 export const WARSAW_UNIT_ID = '071412865000';
+
+export const CITY_UNIT_IDS: Record<string, string> = {
+  Warszawa: WARSAW_UNIT_ID,
+  Kraków: '011212161000',
+  Łódź: '051011661000',
+  Wrocław: '030210564000',
+  Poznań: '023016264000',
+  Gdańsk: '042214361000',
+  Gdynia: '042214362000',
+};
 
 // Subject P3787: "Mediana cen za 1 m2 lokali mieszkalnych sprzedanych w ramach transakcji
 // rynkowych" — a genuine, government-computed median (not an average), confirmed via

@@ -114,4 +114,21 @@ describe('parseRcnFeaturePage', () => {
     expect(features[0]?.rooms).toBeNull();
     expect(features[0]?.floor).toBeNull();
   });
+
+  it('preserves a leading zero in teryt (real bug: "0264" parsed as number 264 by fast-xml-parser)', () => {
+    const wroclawFeature = `
+      <wfs:member>
+        <ms:lokale gml:id="lokale.1">
+          <ms:teryt>0264</ms:teryt>
+          <ms:tran_rodzaj_rynku>wtorny</ms:tran_rodzaj_rynku>
+          <ms:dok_data>2026-02-16 01:00:00+01</ms:dok_data>
+          <ms:lok_pow_uzyt>30.29</ms:lok_pow_uzyt>
+          <ms:lok_cena_brutto>192700</ms:lok_cena_brutto>
+        </ms:lokale>
+      </wfs:member>`;
+
+    const { features } = parseRcnFeaturePage(wrapMembers(wroclawFeature));
+
+    expect(features[0]?.teryt).toBe('0264');
+  });
 });

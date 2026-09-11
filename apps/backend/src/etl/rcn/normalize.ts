@@ -43,10 +43,18 @@ export interface NormalizeRcnResult {
 const MIN_PLAUSIBLE_PRICE_PER_M2 = 1000;
 const MAX_PLAUSIBLE_PRICE_PER_M2 = 100_000;
 
-// Only Warszawa is fetched today (see wfsClient.ts's WARSAW_TERYT filter), but the map
-// keeps city resolution explicit rather than hardcoding the string here too.
-const CITY_BY_TERYT: Record<string, string> = {
+// Powiat-level TERYT codes for every city seeded via wfsClient.ts's CITY_TERYT (see
+// seed.ts), each confirmed live (2026-09-11, curl) to return only rows tagged with that
+// exact teryt. Matches NBP's own "7 miast" grouping and GUS's CITY_UNIT_IDS (client.ts) —
+// all three sources cover the identical city set for Faza 6's comparison view.
+export const CITY_BY_TERYT: Record<string, string> = {
   '1465': 'Warszawa',
+  '1261': 'Kraków',
+  '1061': 'Łódź',
+  '0264': 'Wrocław',
+  '3064': 'Poznań',
+  '2261': 'Gdańsk',
+  '2262': 'Gdynia',
 };
 
 const MARKET_BY_RAW_VALUE: Record<string, RcnMarket> = {
