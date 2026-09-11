@@ -27,9 +27,23 @@ export class PriceTrendsPage {
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
 
-  protected readonly hasData = computed(() => this.rows().length > 0);
-  protected readonly chartOption = computed(() => buildPriceTrendChartOption(this.rows()));
-  protected readonly tableRows = computed(() => buildPriceTableRows(this.rows()));
+  // The shared "Źródło danych"/"Statystyka" filters (core/filters/price-filters.ts) narrow
+  // an already-fetched response client-side rather than triggering a refetch — the API has
+  // no dataSource/statType query params, and every row for a city/market/priceType is a
+  // small enough set that filtering in memory is simpler than adding backend filtering.
+  protected readonly filteredRows = computed(() => {
+    const dataSource = this.filters.dataSource();
+    const statType = this.filters.statType();
+    return this.rows().filter(
+      (row) =>
+        (dataSource === 'all' || row.dataSource === dataSource) &&
+        (statType === 'all' || row.statType === statType),
+    );
+  });
+
+  protected readonly hasData = computed(() => this.filteredRows().length > 0);
+  protected readonly chartOption = computed(() => buildPriceTrendChartOption(this.filteredRows()));
+  protected readonly tableRows = computed(() => buildPriceTableRows(this.filteredRows()));
 
   constructor() {
     effect((onCleanup) => {

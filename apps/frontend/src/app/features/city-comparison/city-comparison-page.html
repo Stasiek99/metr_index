@@ -1,0 +1,78 @@
+<section class="city-comparison">
+  <h1>Porównanie miast</h1>
+
+  <p class="city-comparison__caption">
+    Dla każdego miasta i kwartału pokazywana jest jedna, najlepsza dostępna wartość: mediana RCN
+    (realne transakcje notarialne), w razie jej braku mediana roczna GUS, a w razie braku obu —
+    średnia NBP. Konkretne źródło danego punktu widać w tooltipie na wykresie.
+  </p>
+
+  <div class="city-comparison__field">
+    <span id="city-comparison-cities-label">Miasta</span>
+    <p-multiselect
+      [options]="availableCities()"
+      [ngModel]="selectedCities()"
+      (ngModelChange)="selectedCities.set($event)"
+      display="chip"
+      filter
+      placeholder="Wybierz miasta"
+      ariaLabelledBy="city-comparison-cities-label"
+      styleClass="city-comparison__multiselect"
+    />
+  </div>
+
+  @if (selectedCities().length === 0) {
+    <p class="city-comparison__status">Wybierz co najmniej jedno miasto.</p>
+  } @else if (loading()) {
+    <p class="city-comparison__status">Ładowanie danych...</p>
+  } @else if (error()) {
+    <p class="city-comparison__status city-comparison__status--error">{{ error() }}</p>
+  } @else if (!hasData()) {
+    <p class="city-comparison__status">Brak danych dla wybranych miast/filtrów.</p>
+  } @else {
+    <div
+      echarts
+      [options]="chartOption()"
+      (chartLegendSelectChanged)="onLegendSelectChanged($event)"
+      class="city-comparison__chart"
+    ></div>
+
+    <h2>Ranking wg tempa wzrostu cen</h2>
+    @if (!hasRanking()) {
+      <p class="city-comparison__status">
+        Za mało danych do wyliczenia rankingu (potrzeba co najmniej 2 kwartałów na miasto).
+      </p>
+    } @else {
+      @if (hasRankingChart()) {
+        <div
+          echarts
+          [options]="rankingChartOption()"
+          [style.height.px]="rankingChartHeightPx()"
+          class="city-comparison__ranking-chart"
+        ></div>
+      }
+
+      <p-table [value]="ranking()" dataKey="city">
+        <ng-template #header>
+          <tr>
+            <th>Miasto</th>
+            <th>Okres</th>
+            <th>Cena/m² (początek → koniec)</th>
+            <th>Wzrost</th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-row>
+          <tr>
+            <td>{{ row.city }}</td>
+            <td>{{ row.firstQuarter }} → {{ row.lastQuarter }}</td>
+            <td>
+              {{ formatPricePerM2(row.firstPricePerM2) }} →
+              {{ formatPricePerM2(row.lastPricePerM2) }}
+            </td>
+            <td>{{ formatGrowthPercent(row.growthPercent) }}</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    }
+  }
+</section>

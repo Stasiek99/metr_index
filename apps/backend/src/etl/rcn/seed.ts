@@ -8,12 +8,15 @@ import {
   countRcnTransactions,
   upsertRcnTransactions,
 } from '../../db/rcnTransactionsRepository.js';
-import { normalizeRcnFeatures } from './normalize.js';
+import { CITY_BY_TERYT, normalizeRcnFeatures } from './normalize.js';
 import { parseRcnFeaturePage } from './parse.js';
 import { fetchAllRcnFeaturePages, RCN_WFS_URL, WARSAW_TERYT } from './wfsClient.js';
 
 interface SeedOptions {
   maxPages?: number;
+  teryt?: string;
+  /** Label used only in progress logs — defaults to the raw teryt when omitted. */
+  cityLabel?: string;
 }
 
 /**
@@ -38,6 +41,9 @@ export async function seedRcnPrices(options: SeedOptions = {}): Promise<{
   try {
     migrate(db);
 
+    const teryt = options.teryt ?? WARSAW_TERYT;
+    const cityLabel = options.cityLabel ?? teryt;
+
     let skippedIncomplete = 0;
     let skippedMissingArea = 0;
     let skippedInvalidDate = 0;
@@ -45,7 +51,7 @@ export async function seedRcnPrices(options: SeedOptions = {}): Promise<{
     let skippedImplausiblePrice = 0;
     let pageCount = 0;
 
-    for await (const xml of fetchAllRcnFeaturePages({ teryt: WARSAW_TERYT })) {
+    for await (const xml of fetchAllRcnFeaturePages({ teryt })) {
       pageCount++;
 
       const parsedPage = parseRcnFeaturePage(xml);
@@ -60,7 +66,7 @@ export async function seedRcnPrices(options: SeedOptions = {}): Promise<{
       upsertRcnTransactions(db, transactions);
 
       console.log(
-        `Page ${pageCount}: +${transactions.length} transactions ` +
+        `[${cityLabel}] Page ${pageCount}: +${transactions.length} transactions ` +
           `(running total ${countRcnTransactions(db)})`,
       );
 
@@ -91,16 +97,27 @@ async function main() {
   const maxPagesEnv = process.env.RCN_SEED_MAX_PAGES;
   const maxPages = maxPagesEnv ? Number(maxPagesEnv) : undefined;
 
-  const result = await seedRcnPrices({ maxPages });
-
-  console.log(
-    `Done. rcn_transactions: ${result.transactionCount} rows. ` +
-      `Skipped: ${result.skippedIncomplete} incomplete (no price), ` +
-      `${result.skippedMissingArea} missing area, ${result.skippedInvalidDate} invalid date, ` +
-      `${result.skippedUnknownMarket} unknown market, ` +
-      `${result.skippedImplausiblePrice} implausible price/m². ` +
-      `Aggregated ${result.medianPriceRowCount} median price rows into prices.`,
+  // RCN_SEED_CITY restricts a run to one city (by name, e.g. "Kraków") — useful for a
+  // quick smoke test without re-pulling every city's full history.
+  const onlyCity = process.env.RCN_SEED_CITY;
+  const targets = Object.entries(CITY_BY_TERYT).filter(
+    ([, city]) => !onlyCity || city === onlyCity,
   );
+  if (onlyCity && targets.length === 0) {
+    throw new Error(`RCN_SEED_CITY="${onlyCity}" doesn't match any known city in CITY_BY_TERYT`);
+  }
+
+  for (const [teryt, city] of targets) {
+    const result = await seedRcnPrices({ maxPages, teryt, cityLabel: city });
+    console.log(
+      `[${city}] Done. rcn_transactions: ${result.transactionCount} rows total. ` +
+        `Skipped: ${result.skippedIncomplete} incomplete (no price), ` +
+        `${result.skippedMissingArea} missing area, ${result.skippedInvalidDate} invalid date, ` +
+        `${result.skippedUnknownMarket} unknown market, ` +
+        `${result.skippedImplausiblePrice} implausible price/m². ` +
+        `Aggregated ${result.medianPriceRowCount} median price rows into prices.`,
+    );
+  }
 }
 
 const isMainModule =

@@ -43,10 +43,35 @@ export interface NormalizeRcnResult {
 const MIN_PLAUSIBLE_PRICE_PER_M2 = 1000;
 const MAX_PLAUSIBLE_PRICE_PER_M2 = 100_000;
 
-// Only Warszawa is fetched today (see wfsClient.ts's WARSAW_TERYT filter), but the map
-// keeps city resolution explicit rather than hardcoding the string here too.
-const CITY_BY_TERYT: Record<string, string> = {
+// Powiat-level TERYT codes, each confirmed live (2026-09-11, curl against ms:lokale with
+// an exact `MSC:<city>;` address-prefix filter, paginated across the whole dataset) to
+// return real rows tagged with that exact teryt.
+//
+// Białystok/Bydgoszcz/Katowice/Kielce/Lublin/Olsztyn/Opole/Rzeszów/Szczecin/Zielona Góra
+// are NBP's remaining "10 miast" (ROADMAP.md sekcja 6) — added so GUS/NBP-backed cities
+// also get RCN's median where the registry actually has data. Bydgoszcz and Rzeszów are
+// deliberately absent: verified (paginated scan across the full ms:lokale dataset) to have
+// ZERO records under their own city name — a real registry coverage gap (see ROADMAP.md
+// sekcja 2/"Uzupełnienie... trzecie źródło GUS" on RCN's known fragmentary county-level
+// digitization), not a bug here. The only "Rzeszów"-prefixed hits found were a different,
+// unrelated village ("Rzeszówek"). Both cities still get NBP + GUS coverage via
+// mergeBestAvailablePrices' fallback (frontend/comparison-metrics.ts).
+export const CITY_BY_TERYT: Record<string, string> = {
   '1465': 'Warszawa',
+  '1261': 'Kraków',
+  '1061': 'Łódź',
+  '0264': 'Wrocław',
+  '3064': 'Poznań',
+  '2261': 'Gdańsk',
+  '2262': 'Gdynia',
+  '2061': 'Białystok',
+  '2469': 'Katowice',
+  '2661': 'Kielce',
+  '0663': 'Lublin',
+  '2862': 'Olsztyn',
+  '1661': 'Opole',
+  '3262': 'Szczecin',
+  '0862': 'Zielona Góra',
 };
 
 const MARKET_BY_RAW_VALUE: Record<string, RcnMarket> = {

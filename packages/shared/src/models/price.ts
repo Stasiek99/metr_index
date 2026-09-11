@@ -3,6 +3,18 @@ export type PriceType = 'transaction' | 'offer';
 export type StatType = 'mean' | 'median';
 export type DataSource = 'nbp' | 'rcn' | 'gus';
 
+// Which stat type each source actually produces (ROADMAP.md sekcja 4a): NBP publishes
+// only an aggregated mean (no access to raw observations to compute a median from), while
+// RCN and GUS are both median-only (RCN's median is computed from raw transactions in
+// rcnTransactionsRepository.ts; GUS's median comes pre-computed from subject P3787). Used
+// to disable incompatible (dataSource, statType) filter combinations in the UI rather than
+// letting a user pick a pairing that can only ever return zero rows.
+export const DATA_SOURCE_STAT_TYPES: Record<DataSource, StatType[]> = {
+  nbp: ['mean'],
+  rcn: ['median'],
+  gus: ['median'],
+};
+
 export interface PriceRecord {
   city: string;
   district: string | null;

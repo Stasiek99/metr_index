@@ -118,6 +118,34 @@ describe('PriceTrendsPage', () => {
     expect((fixture.nativeElement as HTMLElement).querySelectorAll('tbody tr')).toHaveLength(3);
   });
 
+  it('narrows to the selected data source client-side, without refetching', () => {
+    const fixture = TestBed.createComponent(PriceTrendsPage);
+    fixture.detectChanges();
+
+    httpMock
+      .expectOne((r) => r.url === '/api/prices')
+      .flush([
+        record({ quarter: '2020Q1', dataSource: 'nbp', pricePerM2: 9000 }),
+        record({ quarter: '2020Q1', dataSource: 'rcn', statType: 'median', pricePerM2: 9500 }),
+      ]);
+    fixture.detectChanges();
+
+    // Reads the computed signal directly rather than forcing a second live chart render —
+    // jsdom has no real canvas, and ngx-echarts re-initializing an existing chart instance
+    // against a 0×0 canvas in this environment throws during teardown regardless of app
+    // correctness (every other multi-render test in this file avoids it the same way, by
+    // keeping the second render's data empty).
+    const component = fixture.componentInstance as unknown as {
+      filteredRows: () => unknown[];
+    };
+    expect(component.filteredRows()).toHaveLength(2);
+
+    filters.setDataSource('nbp');
+
+    expect(component.filteredRows()).toHaveLength(1);
+    httpMock.expectNone((r) => r.url === '/api/prices');
+  });
+
   it('shows the offer-only caption when priceType is offer', () => {
     const fixture = TestBed.createComponent(PriceTrendsPage);
     filters.priceType.set('offer');

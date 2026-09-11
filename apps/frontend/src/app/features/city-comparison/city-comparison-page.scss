@@ -1,0 +1,39 @@
+.city-comparison__caption {
+  color: var(--p-text-muted-color, #6b7280);
+  font-size: 0.875rem;
+  max-width: 65ch;
+}
+
+.city-comparison__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 480px;
+  margin-bottom: 24px;
+
+  span {
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+}
+
+.city-comparison__multiselect {
+  width: 100%;
+}
+
+.city-comparison__status {
+  color: var(--p-text-muted-color, #6b7280);
+}
+
+.city-comparison__status--error {
+  color: var(--p-red-500, #dc2626);
+}
+
+.city-comparison__chart {
+  height: 440px;
+  margin-bottom: 32px;
+}
+
+.city-comparison__ranking-chart {
+  margin-bottom: 24px;
+}

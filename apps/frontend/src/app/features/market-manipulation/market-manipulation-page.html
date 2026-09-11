@@ -37,5 +37,17 @@
 
     <h2>Trend rozjazdu (%) w czasie</h2>
     <div echarts [options]="trendOption()" class="market-manipulation__chart"></div>
+
+    @if (anomalies().length > 0) {
+      <h2>Kwartały z anomalią (odchylenie &gt; {{ anomalyThreshold }}σ)</h2>
+      <ul class="market-manipulation__anomalies">
+        @for (a of anomalies(); track a.record.market + a.record.quarter) {
+          <li>
+            {{ describeMarket(a.record.market) }}, {{ a.record.quarter }}:
+            {{ formatPercent(a.record.spreadPercent) }} ({{ formatDeviation(a.deviation) }})
+          </li>
+        }
+      </ul>
+    }
   }
 </section>

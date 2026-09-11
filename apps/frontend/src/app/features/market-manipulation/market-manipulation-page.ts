@@ -5,7 +5,13 @@ import { PricesApi } from '../../core/api/prices-api';
 import { echarts } from '../../core/echarts/echarts-setup';
 import { formatPercent } from '../../core/format/price-format';
 import { buildSpreadChartOption, buildSpreadTrendChartOption } from './spread-chart-options';
-import { latestSpreadByMarket } from './spread-metrics';
+import {
+  ANOMALY_STD_DEV_THRESHOLD,
+  describeMarket,
+  detectSpreadAnomalies,
+  formatDeviation,
+  latestSpreadByMarket,
+} from './spread-metrics';
 
 const WARSAW = 'Warszawa';
 
@@ -30,9 +36,16 @@ export class MarketManipulationPage {
   protected readonly secondaryOption = computed(() =>
     buildSpreadChartOption(this.rows().filter((row) => row.market === 'secondary')),
   );
-  protected readonly trendOption = computed(() => buildSpreadTrendChartOption(this.rows()));
+  protected readonly anomalies = computed(() => detectSpreadAnomalies(this.rows()));
+  protected readonly trendOption = computed(() =>
+    buildSpreadTrendChartOption(this.rows(), this.anomalies()),
+  );
   protected readonly latestSpread = computed(() => latestSpreadByMarket(this.rows()));
+
   protected readonly formatPercent = formatPercent;
+  protected readonly formatDeviation = formatDeviation;
+  protected readonly describeMarket = describeMarket;
+  protected readonly anomalyThreshold = ANOMALY_STD_DEV_THRESHOLD;
 
   constructor() {
     this.loading.set(true);

@@ -98,4 +98,30 @@ describe('buildSpreadTrendChartOption', () => {
     expect(html).toContain('Rynek pierwotny: 10.0%');
     expect(html).not.toContain('Rynek wtórny');
   });
+
+  it('marks anomalous quarters on the matching series only', () => {
+    const rows = [
+      record({ quarter: '2020Q1', market: 'primary', spreadPercent: 40 }),
+      record({ quarter: '2020Q1', market: 'secondary', spreadPercent: 5 }),
+    ];
+    const anomalies = [
+      { record: rows[0], deviation: 2.5 },
+    ];
+
+    const [primary, secondary] = series(buildSpreadTrendChartOption(rows, anomalies)) as unknown as {
+      name: string;
+      markPoint?: { data: { name: string; coord: [string, number] }[] };
+    }[];
+
+    expect(primary.markPoint?.data).toEqual([{ name: '2020Q1', coord: ['2020Q1', 40] }]);
+    expect(secondary.markPoint).toBeUndefined();
+  });
+
+  it('has no markPoint at all when there are no anomalies', () => {
+    const option = buildSpreadTrendChartOption([record()]);
+
+    for (const s of series(option) as unknown as { markPoint?: unknown }[]) {
+      expect(s.markPoint).toBeUndefined();
+    }
+  });
 });

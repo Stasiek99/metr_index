@@ -47,7 +47,13 @@ export function buildPriceTrendChartOption(rows: PriceRecord[]): EChartsCoreOpti
   const quarters = [...new Set(rows.map((row) => row.quarter))].sort((a, b) => a.localeCompare(b));
   const byKey = new Map(rows.map((row) => [seriesKey(row.quarter, row.dataSource), row]));
 
-  const series = SERIES_DEFS.map((def) => ({
+  // Only a source actually present in `rows` gets a series — when the shared "Źródło
+  // danych" filter (core/filters/price-filters.ts) narrows to one source, the other two
+  // are absent from `rows` entirely and shouldn't leave a dangling, all-null legend entry.
+  const presentSources = new Set(rows.map((row) => row.dataSource));
+  const activeDefs = SERIES_DEFS.filter((def) => presentSources.has(def.dataSource));
+
+  const series = activeDefs.map((def) => ({
     type: 'line' as const,
     name: def.name,
     // No smoothing: RCN has real multi-quarter gaps (see connectNulls below), and
