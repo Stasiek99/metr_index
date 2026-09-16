@@ -30,13 +30,55 @@
     </div>
 
     <h2>Rynek pierwotny</h2>
-    <div echarts [options]="primaryOption()" class="market-manipulation__chart"></div>
+    <div
+      echarts
+      [options]="primaryOption()"
+      class="market-manipulation__chart"
+      role="img"
+      [attr.aria-label]="
+        'Wykres ceny ofertowej i transakcyjnej dla rynku pierwotnego w czasie.' +
+        (latestSpread().primary
+          ? ' Ostatni dostępny kwartał: ' +
+            latestSpread().primary!.quarter +
+            ', rozjazd ' +
+            formatPercent(latestSpread().primary!.spreadPercent) +
+            '.'
+          : '')
+      "
+    ></div>
 
     <h2>Rynek wtórny</h2>
-    <div echarts [options]="secondaryOption()" class="market-manipulation__chart"></div>
+    <div
+      echarts
+      [options]="secondaryOption()"
+      class="market-manipulation__chart"
+      role="img"
+      [attr.aria-label]="
+        'Wykres ceny ofertowej i transakcyjnej dla rynku wtórnego w czasie.' +
+        (latestSpread().secondary
+          ? ' Ostatni dostępny kwartał: ' +
+            latestSpread().secondary!.quarter +
+            ', rozjazd ' +
+            formatPercent(latestSpread().secondary!.spreadPercent) +
+            '.'
+          : '')
+      "
+    ></div>
 
     <h2>Trend rozjazdu (%) w czasie</h2>
-    <div echarts [options]="trendOption()" class="market-manipulation__chart"></div>
+    <div
+      echarts
+      [options]="trendOption()"
+      class="market-manipulation__chart"
+      role="img"
+      [attr.aria-label]="
+        'Wykres trendu rozjazdu ceny ofertowej i transakcyjnej (%) w czasie dla obu rynków. Wykryto ' +
+        anomalies().length +
+        ' kwartałów z anomalią powyżej ' +
+        anomalyThreshold +
+        ' odchylenia standardowego.'
+      "
+    ></div>
 
     @if (anomalies().length > 0) {
       <h2>Kwartały z anomalią (odchylenie &gt; {{ anomalyThreshold }}σ)</h2>
