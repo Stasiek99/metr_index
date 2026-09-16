@@ -124,14 +124,20 @@ export function buildGrowthRankingChartOption(ranking: CityGrowth[]): EChartsCor
   });
 
   return {
-    // containLabel measures the actual rendered axis labels (long city names, the
-    // "%" axis name) and expands the plot to fit them, instead of a guessed pixel
-    // margin that clips whichever city name turns out to be longest.
+    // containLabel measures the actual rendered axis labels (long city names) and expands
+    // the plot to fit them, instead of a guessed pixel margin that clips whichever city
+    // name turns out to be longest.
     grid: { left: 16, right: 48, top: 16, bottom: 16, containLabel: true },
     xAxis: {
       type: 'value',
-      name: 'Wzrost cen (%)',
-      axisLabel: { formatter: (value: number) => `${value}%` },
+      // No axis `name` here — on a narrow mobile chart there isn't room for tick labels,
+      // each bar's own value label, and an axis title all at once (verified: the container
+      // is simply too narrow, not a margin/padding miscalculation), and it's redundant
+      // anyway next to the "Ranking wg tempa wzrostu cen" heading and each bar's own label.
+      // hideOverlap: on a narrow viewport there isn't room for every "%" tick label at the
+      // default spacing — without this they render on top of each other (unlike the
+      // category axes elsewhere, a value axis doesn't auto-thin its own ticks).
+      axisLabel: { formatter: (value: number) => `${value}%`, hideOverlap: true },
     },
     yAxis: {
       type: 'category',

@@ -9,7 +9,7 @@
 }
 
 .price-trends__status--error {
-  color: var(--p-red-500, #dc2626);
+  color: var(--app-status-error-color, #dc2626);
 }
 
 .price-trends__chart {

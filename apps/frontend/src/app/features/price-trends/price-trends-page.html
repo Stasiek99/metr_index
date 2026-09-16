@@ -20,7 +20,13 @@
   } @else if (!hasData()) {
     <p class="price-trends__status">Brak danych dla wybranych filtrów.</p>
   } @else {
-    <div echarts [options]="chartOption()" class="price-trends__chart"></div>
+    <div
+      echarts
+      [options]="chartOption()"
+      class="price-trends__chart"
+      role="img"
+      aria-label="Wykres trendu cen za m² w czasie. Pełne dane liczbowe znajdują się w tabeli poniżej."
+    ></div>
 
     <div class="price-trends__table-toolbar">
       <button pButton type="button" size="small" (click)="dt.exportCSV()">

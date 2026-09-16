@@ -35,6 +35,10 @@
       [options]="chartOption()"
       (chartLegendSelectChanged)="onLegendSelectChanged($event)"
       class="city-comparison__chart"
+      role="img"
+      [attr.aria-label]="
+        'Wykres porównania cen za m² w czasie dla miast: ' + selectedCities().join(', ') + '.'
+      "
     ></div>
 
     <h2>Ranking wg tempa wzrostu cen</h2>
@@ -49,6 +53,8 @@
           [options]="rankingChartOption()"
           [style.height.px]="rankingChartHeightPx()"
           class="city-comparison__ranking-chart"
+          role="img"
+          aria-label="Wykres rankingu miast wg tempa wzrostu cen. Pełne dane liczbowe znajdują się w tabeli poniżej."
         ></div>
       }
 

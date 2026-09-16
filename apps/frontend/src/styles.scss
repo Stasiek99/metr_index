@@ -8,6 +8,19 @@ body {
   color: var(--p-text-color, inherit);
 }
 
+// Status/error text color, scoped to the same .app-dark class PrimeNG's own darkModeSelector
+// uses (see app.config.ts) — not native CSS light-dark(), which only tracks prefers-color-scheme
+// and would ignore the app's manual theme toggle. red.500 (#ef4444, Aura's raw palette shade)
+// is 3.76:1 on white — fails WCAG AA (4.5:1) in both modes, since it's a static shade with no
+// light/dark variant. red.600 (light) / red.400 (dark) verified with axe-core: 4.83:1 / 6.40:1.
+:root {
+  --app-status-error-color: #dc2626;
+}
+
+:root.app-dark {
+  --app-status-error-color: #f87171;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }

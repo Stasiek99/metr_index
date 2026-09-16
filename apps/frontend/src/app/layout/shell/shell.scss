@@ -93,3 +93,23 @@
     border-bottom: 1px solid var(--p-content-border-color, #e2e2e2);
   }
 }
+
+// Below 480px the nav's brand + 3 links + toggle button no longer fit on one row even
+// after word-wrapping inside each link (min-content width of "Porównanie miast" alone is
+// wider than the viewport) — verified with a real 320px-wide headless run, not guessed.
+// Wraps the link row onto its own full-width line instead of letting individual words break.
+@media (max-width: 480px) {
+  .shell__nav {
+    flex-wrap: wrap;
+    height: auto;
+    gap: 8px;
+    padding: 8px 12px;
+
+    nav {
+      order: 3;
+      flex-basis: 100%;
+      justify-content: center;
+      gap: 12px;
+    }
+  }
+}
